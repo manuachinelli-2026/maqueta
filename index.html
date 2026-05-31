@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maqueta · Casco</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --col-mesa:   #d4a853;
+  --col-pista:  #4a7fb5;
+  --col-barra:  #8a5c35;
+  --col-comida: #5a8a5a;
+  --col-deco:   #9a5a8a;
+  --col-otro:   #6a6a6a;
+}
+
+body {
+  font-family: 'Courier New', monospace;
+  background: #111;
+  color: #ddd;
+  height: 100dvh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── MAP ── */
+#map-wrap {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#map-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #555;
+  flex-shrink: 0;
+}
+
+#svg-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+#venue {
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  overflow: visible;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: 288px;
+  flex-shrink: 0;
+  background: #181818;
+  border-left: 1px solid #252525;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.s-section { display: flex; flex-direction: column; gap: 8px; }
+
+.s-title {
+  font-size: 9px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: #555;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #222;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  color: #666;
+}
+
+select, input {
+  background: #222;
+  border: 1px solid #2e2e2e;
+  border-radius: 3px;
+  color: #ddd;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  outline: none;
+  width: 100%;
+}
+select:focus, input:focus { border-color: #9a7a50; }
+
+.frow { display: flex; gap: 6px; }
+.frow label { flex: 1; }
+
+.btn {
+  border: none;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 7px 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.btn:hover { opacity: .8; }
+.btn-add   { background: #9a7a50; color: #f0e8d8; width: 100%; }
+.btn-sm    { padding: 5px 8px; font-size: 10px; }
+.btn-ghost { background: #232323; color: #aaa; border: 1px solid #2e2e2e; flex: 1; }
+.btn-del   { background: #3e1818; color: #e0a0a0; flex: 1; }
+.btn-clear { background: #2a1414; color: #b07070; border: 1px solid #3a2020; width: 100%; }
+
+/* Selected panel */
+#sel-panel          { display: none; }
+#sel-panel.visible  { display: flex; flex-direction: column; gap: 8px; }
+#sel-name { font-size: 12px; color: #ccc; }
+#sel-dims { font-size: 10px; color: #666; }
+
+/* Item list */
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 7px;
+  border-radius: 3px;
+  background: #202020;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.item-row:hover  { border-color: #2e2e2e; }
+.item-row.active { border-color: #9a7a50; }
+
+.item-dot  { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.item-text { flex: 1; min-width: 0; }
+.item-lbl  { font-size: 11px; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-sub  { font-size: 9px; color: #555; }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.stat-card { background: #1e1e1e; border-radius: 3px; padding: 10px; text-align: center; }
+.stat-n { font-size: 22px; font-weight: bold; }
+.stat-l { font-size: 9px; color: #555; margin-top: 2px; }
+
+.empty { font-size: 10px; color: #444; text-align: center; padding: 10px; }
+
+#hint {
+  padding: 8px 14px;
+  font-size: 9px;
+  color: #3a3a3a;
+  border-top: 1px solid #1e1e1e;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ MAP ═══ -->
+<div id="map-wrap">
+  <div id="map-top">
+    <span>CASCO &nbsp;·&nbsp; PLANTA &nbsp;·&nbsp; 54 × 44 m</span>
+    <span id="scale-lbl"></span>
+  </div>
+  <div id="svg-container">
+    <svg id="venue"
+         viewBox="-2 -2 58 48"
+         preserveAspectRatio="xMidYMid meet"
+         xmlns="http://www.w3.org/2000/svg">
+
+      <!-- ── BACKGROUNDS ── -->
+      <rect x="-2" y="-2" width="58" height="48" fill="#161616"/>
+      <rect x="0" y="0" width="54" height="44" fill="#e8e2d4"/>
+
+      <!-- ── A1: HILERA ÁRBOLES NORTE ── -->
+      <rect x="0" y="0" width="27" height="4" fill="#aac090" opacity=".65"/>
+      <text x="13.5" y="2.5" text-anchor="middle"
+            font-size=".85" fill="#4a6a30" font-family="Courier New"
+            letter-spacing=".05em">HILERA DE ÁRBOLES · 4 M</text>
+
+      <!-- ── A1: CASA ── -->
+      <rect x="3.5" y="29" width="20" height="15" fill="#cec6b4"/>
+      <line x1="3.5" y1="29" x2="23.5" y2="44" stroke="#a89878" stroke-width=".2"/>
+      <line x1="23.5" y1="29" x2="3.5" y2="44" stroke="#a89878" stroke-width=".2"/>
+      <rect x="3.5" y="29" width="20" height="15" fill="none"
+            stroke="#a09080" stroke-width=".2"/>
+      <text x="13.5" y="37.5" text-anchor="middle"
+            font-size="1.2" fill="#908070" font-family="Courier New"
+            letter-spacing=".08em">CASA</text>
+
+      <!-- ── A1: ÁRBOLES LATERAL OESTE ── -->
+      <circle cx="1" cy="6"  r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="1" cy="10" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="1" cy="14" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="1" cy="18" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="1" cy="22" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="1" cy="26" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+
+      <!-- ── A1: COTAS ── -->
+      <line x1="2.8" y1="4"  x2="2.3" y2="4"  stroke="#a09080" stroke-width=".12"/>
+      <line x1="2.8" y1="28" x2="2.3" y2="28" stroke="#a09080" stroke-width=".12"/>
+      <line x1="2.55" y1="4" x2="2.55" y2="28" stroke="#a09080" stroke-width=".12"/>
+      <text font-size=".72" fill="#a09080" font-family="Courier New"
+            text-anchor="middle"
+            transform="translate(1.8,16) rotate(-90)">24 m</text>
+
+      <!-- ── A1: LABEL ── -->
+      <text x="13.5" y="18.5" text-anchor="middle"
+            font-size="2.5" fill="#c8bfae" font-family="Courier New"
+            font-weight="bold">A1</text>
+
+      <!-- ── DIVISORIA ── -->
+      <line x1="27" y1="0" x2="27" y2="44"
+            stroke="#7a7060" stroke-width=".12" stroke-dasharray=".7,.4"/>
+
+      <!-- ── HIGUERA ── -->
+      <circle cx="27" cy="11" r="2.75"
+              fill="#a8c890" fill-opacity=".45"
+              stroke="#4a6a30" stroke-width=".14"
+              stroke-dasharray=".4,.25"/>
+      <line x1="25.6" y1="9.6"  x2="28.4" y2="12.4" stroke="#4a6a30" stroke-width=".18"/>
+      <line x1="28.4" y1="9.6"  x2="25.6" y2="12.4" stroke="#4a6a30" stroke-width=".18"/>
+      <text x="30.2" y="10.7"
+            font-size=".88" fill="#4a6a30" font-family="Courier New"
+            font-weight="bold">higuera</text>
+      <text x="30.2" y="11.9"
+            font-size=".74" fill="#6a8a50" font-family="Courier New">Ø 5.5 M</text>
+
+      <!-- ── BOMBA ── -->
+      <circle cx="27" cy="22" r=".6" fill="#2a2a2a" stroke="#555" stroke-width=".15"/>
+      <text x="27.9" y="22.4"
+            font-size=".88" fill="#7a7060" font-family="Courier New">BOMBA</text>
+
+      <!-- ── A2: LABEL ── -->
+      <text x="40.5" y="24" text-anchor="middle"
+            font-size="2.5" fill="#c8bfae" font-family="Courier New"
+            font-weight="bold">A2</text>
+
+      <!-- ── TRANQUERA ── -->
+      <line x1="51.5" y1="0" x2="51.5" y2=".8" stroke="#666" stroke-width=".2"/>
+      <line x1="54"   y1="0" x2="54"   y2=".8" stroke="#666" stroke-width=".2"/>
+      <text x="52.75" y="2.2" text-anchor="middle"
+            font-size=".75" fill="#6a6050" font-family="Courier New">TRANQUERA · 2.5 M</text>
+
+      <!-- ── GINGO ── -->
+      <circle cx="47.5" cy="2.2" r="1.5"
+              fill="#a8c890" fill-opacity=".55"
+              stroke="#4a6a30" stroke-width=".18"/>
+      <circle cx="47.5" cy="2.2" r=".28" fill="#4a6a30"/>
+      <text x="47.5" y="4.6" text-anchor="middle"
+            font-size=".78" fill="#4a6a30" font-family="Courier New">GINGO</text>
+
+      <!-- ── OMBÚ ── -->
+      <circle cx="42.5" cy="2.3" r="1.75"
+              fill="#a8c890" fill-opacity=".55"
+              stroke="#4a6a30" stroke-width=".18"/>
+      <circle cx="42.5" cy="2.3" r=".28" fill="#4a6a30"/>
+      <text x="42.5" y="4.9" text-anchor="middle"
+            font-size=".78" fill="#4a6a30" font-family="Courier New">OMBÚ</text>
+
+      <!-- ── ÁLAMOS ESTE ── -->
+      <circle cx="53" cy="3"  r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="7"  r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="11" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="15" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="19" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="23" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="27" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="31" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="35" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="39" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <circle cx="53" cy="43" r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
+      <text text-anchor="middle" font-size=".75" fill="#5a8040" font-family="Courier New"
+            letter-spacing=".05em"
+            transform="translate(55.8,22) rotate(90)">ÁLAMOS · E</text>
+
+      <!-- ── PALENQUE ── -->
+      <!-- 3m de divisoria (x=30), 5m del borde sur (bottom=39, top=35), 4×1m vertical -->
+      <rect x="30" y="35" width="1" height="4"
+            fill="#9a8870" stroke="#7a7060" stroke-width=".14"/>
+      <text x="31.8" y="37.8"
+            font-size=".74" fill="#7a7060" font-family="Courier New">PALENQUE · 4 × 1 M</text>
+
+      <!-- ── CERCO EXTERIOR ── -->
+      <!-- Norte (gap en tranquera x=51.5 a 54) -->
+      <line x1="0" y1="0" x2="51.5" y2="0" stroke="#444" stroke-width=".28"/>
+      <!-- Sur -->
+      <line x1="0" y1="44" x2="54" y2="44" stroke="#444" stroke-width=".28"/>
+      <!-- Oeste -->
+      <line x1="0" y1="0" x2="0" y2="44" stroke="#444" stroke-width=".28"/>
+      <!-- Este -->
+      <line x1="54" y1="0" x2="54" y2="44" stroke="#444" stroke-width=".28"/>
+
+      <!-- ── BRÚJULA ── -->
+      <g transform="translate(2,41.5)">
+        <circle r="1.2" fill="none" stroke="#555" stroke-width=".15"/>
+        <polygon points="0,-1 .38,.4 0,.1 -.38,.4" fill="#888"/>
+        <text y="-1.55" text-anchor="middle"
+              font-size=".85" fill="#666" font-family="Courier New">N</text>
+      </g>
+
+      <!-- ── ESCALA ── -->
+      <g transform="translate(5,43.3)">
+        <rect x="0" y="0" width="5"  height=".28" fill="#666"/>
+        <rect x="5" y="0" width="5"  height=".28" fill="#444"/>
+        <line x1="0"  y1="-.22" x2="0"  y2=".5" stroke="#666" stroke-width=".14"/>
+        <line x1="5"  y1="-.22" x2="5"  y2=".5" stroke="#666" stroke-width=".14"/>
+        <line x1="10" y1="-.22" x2="10" y2=".5" stroke="#666" stroke-width=".14"/>
+        <text x="0"  y="-.55" text-anchor="middle"
+              font-size=".6" fill="#555" font-family="Courier New">0</text>
+        <text x="5"  y="-.55" text-anchor="middle"
+              font-size=".6" fill="#555" font-family="Courier New">5 m</text>
+        <text x="10" y="-.55" text-anchor="middle"
+              font-size=".6" fill="#555" font-family="Courier New">10 m</text>
+      </g>
+
+      <!-- ── CAPA DE ÍTEMS ── -->
+      <g id="items-layer"></g>
+
+    </svg>
+  </div>
+</div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<div id="sidebar">
+  <div id="sidebar-scroll">
+
+    <!-- ADD -->
+    <div class="s-section">
+      <div class="s-title">Agregar ítem</div>
+
+      <label>Tipo
+        <select id="i-type">
+          <option value="mesa">Mesa</option>
+          <option value="pista">Pista de baile</option>
+          <option value="barra">Barra</option>
+          <option value="comida">Sector comida</option>
+          <option value="deco">Decoración</option>
+          <option value="otro">Otro</option>
+        </select>
+      </label>
+
+      <label>Nombre
+        <input type="text" id="i-label" placeholder="Mesa 1" autocomplete="off">
+      </label>
+
+      <div class="frow">
+        <label>Ancho (m)
+          <input type="number" id="i-w" value="2" min=".5" max="30" step=".5">
+        </label>
+        <label>Largo (m)
+          <input type="number" id="i-h" value="2" min=".5" max="30" step=".5">
+        </label>
+      </div>
+
+      <button class="btn btn-add" id="btn-add">+ Agregar al mapa</button>
+    </div>
+
+    <!-- SELECTED -->
+    <div class="s-section" id="sel-panel">
+      <div class="s-title">Seleccionado</div>
+      <div id="sel-name"></div>
+      <div id="sel-dims"></div>
+      <div class="frow">
+        <button class="btn btn-ghost btn-sm" id="btn-rl">↺ &minus;15°</button>
+        <button class="btn btn-ghost btn-sm" id="btn-rr">↻ +15°</button>
+      </div>
+      <div class="frow">
+        <button class="btn btn-ghost btn-sm" id="btn-dup">⧉ Duplicar</button>
+        <button class="btn btn-del  btn-sm" id="btn-del">✕ Eliminar</button>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="s-section">
+      <div class="s-title">En el mapa (<span id="item-count">0</span>)</div>
+      <div id="item-list"><div class="empty">Sin ítems todavía</div></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="s-section">
+      <div class="s-title">Resumen</div>
+      <div class="stats" id="stats">
+        <div class="empty" style="grid-column:1/-1">—</div>
+      </div>
+    </div>
+
+    <!-- CLEAR -->
+    <div class="s-section">
+      <button class="btn btn-clear btn-sm" id="btn-clear">Limpiar todo</button>
+    </div>
+
+  </div>
+  <div id="hint">
+    R&nbsp;=&nbsp;rotar &nbsp;·&nbsp; D&nbsp;=&nbsp;duplicar &nbsp;·&nbsp; Supr&nbsp;=&nbsp;eliminar &nbsp;·&nbsp; Esc&nbsp;=&nbsp;deseleccionar
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ─── CONFIG ───────────────────────────────────────────────
+const TYPES = {
+  mesa:   { label: 'Mesa',           color: '#d4a853', fg: '#1a0e00' },
+  pista:  { label: 'Pista de baile', color: '#4a7fb5', fg: '#e0eaf8' },
+  barra:  { label: 'Barra',          color: '#8a5c35', fg: '#f0e8d8' },
+  comida: { label: 'Sector comida',  color: '#5a8a5a', fg: '#e0f0e0' },
+  deco:   { label: 'Decoración',     color: '#9a5a8a', fg: '#f8e0f8' },
+  otro:   { label: 'Otro',           color: '#6a6a6a', fg: '#f0f0f0' },
+};
+
+const NS  = 'http://www.w3.org/2000/svg';
+const KEY = 'casco-maqueta-v1';
+
+// ─── STATE ────────────────────────────────────────────────
+let S    = { items: [], selId: null, nextId: 1 };
+let drag = null; // { id, offX, offY }
+
+// ─── PERSISTENCE ──────────────────────────────────────────
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(_) {}
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (d && Array.isArray(d.items)) S = d;
+  } catch(_) {}
+}
+
+// ─── SVG UTILS ────────────────────────────────────────────
+const svgEl = document.getElementById('venue');
+const layer = document.getElementById('items-layer');
+
+function el(tag, attrs) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+function clientToSVG(cx, cy) {
+  const pt = svgEl.createSVGPoint();
+  pt.x = cx; pt.y = cy;
+  return pt.matrixTransform(svgEl.getScreenCTM().inverse());
+}
+
+// ─── RENDER ───────────────────────────────────────────────
+function render() {
+  layer.innerHTML = '';
+  for (const item of S.items) drawItem(item);
+  renderSidebar();
+}
+
+function drawItem(item) {
+  const cfg = TYPES[item.type] || TYPES.otro;
+  const sel = item.id === S.selId;
+  const hw = item.w / 2;
+  const hh = item.h / 2;
+
+  // Outer g: position (translate)
+  const outer = el('g', {
+    'data-id': item.id,
+    transform: `translate(${item.x},${item.y})`,
+    cursor: 'grab',
+  });
+
+  // Inner g: rotation around rect center
+  const inner = el('g', { transform: `rotate(${item.rot},${hw},${hh})` });
+
+  // Body
+  inner.appendChild(el('rect', {
+    x: 0, y: 0, width: item.w, height: item.h,
+    fill: cfg.color,
+    'fill-opacity': sel ? '1' : '.82',
+    stroke: sel ? '#ffffff' : '#00000033',
+    'stroke-width': sel ? '.14' : '.07',
+    rx: '.12',
+  }));
+
+  // Label
+  const fs = Math.min(.92, Math.max(.44, Math.min(hw, hh) * .5));
+  const lbl = el('text', {
+    x: hw, y: hh + fs * .38,
+    'text-anchor': 'middle',
+    'font-size': fs,
+    fill: cfg.fg,
+    'font-family': 'Courier New',
+    'pointer-events': 'none',
+  });
+  lbl.textContent = item.label;
+  inner.appendChild(lbl);
+
+  // Dimension text (skip if too small)
+  if (item.w >= 1.5 || item.h >= 1.5) {
+    const dfs = fs * .7;
+    const dim = el('text', {
+      x: hw, y: hh + fs * .38 + dfs * 1.35,
+      'text-anchor': 'middle',
+      'font-size': dfs,
+      fill: cfg.fg,
+      'font-family': 'Courier New',
+      'fill-opacity': '.6',
+      'pointer-events': 'none',
+    });
+    dim.textContent = `${item.w}×${item.h} m`;
+    inner.appendChild(dim);
+  }
+
+  // Selection corner handles
+  if (sel) {
+    for (const [cx, cy] of [[0,0],[item.w,0],[0,item.h],[item.w,item.h]]) {
+      inner.appendChild(el('rect', {
+        x: cx-.22, y: cy-.22, width: .44, height: .44,
+        fill: '#fff', stroke: '#4a4a4a', 'stroke-width': '.06',
+        rx: '.08', 'pointer-events': 'none',
+      }));
+    }
+  }
+
+  outer.appendChild(inner);
+
+  // Mouse events
+  outer.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    beginDrag(e.clientX, e.clientY, item.id);
+  });
+
+  // Touch events
+  outer.addEventListener('touchstart', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const t = e.touches[0];
+    beginDrag(t.clientX, t.clientY, item.id);
+  }, { passive: false });
+
+  layer.appendChild(outer);
+}
+
+// ─── SIDEBAR ──────────────────────────────────────────────
+function renderSidebar() {
+  const item = S.items.find(i => i.id === S.selId);
+
+  // Selected panel
+  const panel = document.getElementById('sel-panel');
+  if (item) {
+    panel.classList.add('visible');
+    document.getElementById('sel-name').textContent = item.label;
+    document.getElementById('sel-dims').textContent =
+      `${item.w} × ${item.h} m  ·  ${item.rot}°`;
+  } else {
+    panel.classList.remove('visible');
+  }
+
+  // Count
+  document.getElementById('item-count').textContent = S.items.length;
+
+  // List
+  const listEl = document.getElementById('item-list');
+  if (S.items.length === 0) {
+    listEl.innerHTML = '<div class="empty">Sin ítems todavía</div>';
+  } else {
+    listEl.innerHTML = '';
+    for (const it of S.items) {
+      const cfg = TYPES[it.type] || TYPES.otro;
+      const row = document.createElement('div');
+      row.className = 'item-row' + (it.id === S.selId ? ' active' : '');
+      row.innerHTML = `
+        <div class="item-dot" style="background:${cfg.color}"></div>
+        <div class="item-text">
+          <div class="item-lbl">${it.label}</div>
+          <div class="item-sub">${it.w} × ${it.h} m</div>
+        </div>`;
+      row.onclick = () => { S.selId = it.id; render(); };
+      listEl.appendChild(row);
+    }
+  }
+
+  // Stats
+  const counts = {};
+  for (const it of S.items) counts[it.type] = (counts[it.type] || 0) + 1;
+  const statsEl = document.getElementById('stats');
+  if (Object.keys(counts).length === 0) {
+    statsEl.innerHTML = '<div class="empty" style="grid-column:1/-1">—</div>';
+  } else {
+    statsEl.innerHTML = '';
+    for (const [t, n] of Object.entries(counts)) {
+      const cfg = TYPES[t] || TYPES.otro;
+      const card = document.createElement('div');
+      card.className = 'stat-card';
+      card.innerHTML =
+        `<div class="stat-n" style="color:${cfg.color}">${n}</div>` +
+        `<div class="stat-l">${cfg.label}</div>`;
+      statsEl.appendChild(card);
+    }
+  }
+}
+
+// ─── DRAG ─────────────────────────────────────────────────
+function beginDrag(clientX, clientY, id) {
+  S.selId = id;
+  render();
+  const item = S.items.find(i => i.id === id);
+  const pt   = clientToSVG(clientX, clientY);
+  drag = { id, offX: pt.x - item.x, offY: pt.y - item.y };
+}
+
+function moveDrag(clientX, clientY) {
+  if (!drag) return;
+  const pt   = clientToSVG(clientX, clientY);
+  const item = S.items.find(i => i.id === drag.id);
+  if (!item) return;
+  item.x = +( pt.x - drag.offX ).toFixed(2);
+  item.y = +( pt.y - drag.offY ).toFixed(2);
+  // Fast path: only update position, skip full re-render
+  const g = layer.querySelector(`[data-id="${drag.id}"]`);
+  if (g) g.setAttribute('transform', `translate(${item.x},${item.y})`);
+}
+
+function endDrag() {
+  if (drag) { save(); drag = null; }
+}
+
+document.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+document.addEventListener('mouseup',   endDrag);
+
+document.addEventListener('touchmove', e => {
+  if (!drag) return;
+  e.preventDefault();
+  moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+document.addEventListener('touchend', endDrag);
+
+// Click on SVG background → deselect
+svgEl.addEventListener('mousedown', e => {
+  if (!e.target.closest('[data-id]')) {
+    S.selId = null;
+    render();
+  }
+});
+
+// ─── KEYBOARD ─────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (!S.selId) return;
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); del(); }
+  else if (e.key === 'r' || e.key === 'R') rotate(e.shiftKey ? -15 : 15);
+  else if (e.key === 'd' || e.key === 'D') dup();
+  else if (e.key === 'Escape') { S.selId = null; render(); }
+});
+
+// ─── ACTIONS ──────────────────────────────────────────────
+function addItem() {
+  const type  = document.getElementById('i-type').value;
+  const rawLbl = document.getElementById('i-label').value.trim();
+  const label = rawLbl || TYPES[type].label + ' ' + S.nextId;
+  const w = parseFloat(document.getElementById('i-w').value) || 2;
+  const h = parseFloat(document.getElementById('i-h').value) || 2;
+
+  const item = {
+    id: S.nextId++, type, label, w, h,
+    x: +(27 - w / 2).toFixed(2),   // center of full map
+    y: +(22 - h / 2).toFixed(2),
+    rot: 0,
+  };
+  S.items.push(item);
+  S.selId = item.id;
+  document.getElementById('i-label').value = '';
+  save();
+  render();
+}
+
+function del() {
+  S.items = S.items.filter(i => i.id !== S.selId);
+  S.selId = null;
+  save(); render();
+}
+
+function dup() {
+  const src = S.items.find(i => i.id === S.selId);
+  if (!src) return;
+  const copy = { ...src, id: S.nextId++, x: src.x + 1.5, y: src.y + 1.5 };
+  S.items.push(copy);
+  S.selId = copy.id;
+  save(); render();
+}
+
+function rotate(delta) {
+  const item = S.items.find(i => i.id === S.selId);
+  if (!item) return;
+  item.rot = (item.rot + delta + 360) % 360;
+  save(); render();
+}
+
+// ─── BUTTON EVENTS ────────────────────────────────────────
+document.getElementById('btn-add').onclick = addItem;
+document.getElementById('btn-rl').onclick  = () => rotate(-15);
+document.getElementById('btn-rr').onclick  = () => rotate(15);
+document.getElementById('btn-dup').onclick = dup;
+document.getElementById('btn-del').onclick = del;
+
+document.getElementById('btn-clear').onclick = () => {
+  if (confirm('¿Eliminar todos los ítems del mapa?')) {
+    S.items = []; S.selId = null;
+    save(); render();
+  }
+};
+
+document.getElementById('i-label').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addItem();
+});
+
+document.getElementById('i-type').addEventListener('change', e => {
+  document.getElementById('i-label').placeholder =
+    (TYPES[e.target.value]?.label || '') + ' 1';
+});
+
+// ─── INIT ─────────────────────────────────────────────────
+load();
+render();
+</script>
+</body>
+</html>
