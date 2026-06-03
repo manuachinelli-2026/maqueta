@@ -695,6 +695,8 @@ body.night .night-bloom { opacity: .58; }
           <option value="bebedero">Bebedero</option>
           <option value="reflector">Reflector</option>
           <option value="cuina">Cuina Catering</option>
+          <option value="vela">Vela de piso</option>
+          <option value="livingf">Living Fardos</option>
           <option value="barra">Barra de fardos</option>
           <option value="living">Living Gervasioni</option>
           <option value="texto">Texto / Referencia</option>
@@ -782,6 +784,8 @@ const TYPES = {
   cuina:     { label: 'Cuina Catering', color: '#c8a040', fg: '#1a1000' },
   barra:     { label: 'Barra de fardos', color: '#c8b060', fg: '#1a1200' },
   living:    { label: 'Living Gervasioni', color: '#c0906c', fg: '#1a0c00' },
+  livingf:   { label: 'Living Fardos',    color: '#c8a828', fg: '#1a1000' },
+  vela:      { label: 'Vela de piso',   color: '#f0a828', fg: '#1a0800' },
   texto:     { label: 'Texto',          color: '#1a1a1a', fg: '#ffffff' },
   otro:      { label: 'Otro',          color: '#6a6a6a', fg: '#f0f0f0' },
 };
@@ -895,6 +899,10 @@ function buildItem(item, sel) {
     drawLiving(inner, item, sel);
   } else if (item.type === 'texto') {
     drawTexto(inner, item, sel);
+  } else if (item.type === 'vela') {
+    drawVela(inner, item, sel);
+  } else if (item.type === 'livingf') {
+    drawLivingFardos(inner, item, sel);
   } else {
     // Drop shadow
     inner.appendChild(el('rect', {
@@ -1475,6 +1483,7 @@ function rebuildLightLayer() {
     else if (item.type === 'bebedero')  { fill='#40b0ff'; r=item.w/2+1.0; }
     else if (item.type === 'pista' && item.lightsOn) { fill='#ffe0a0'; r=Math.max(item.w,item.h)*.8; }
     else if (item.type === 'cuina')     { fill='#ff8820'; r=item.w/2*.9; }
+    else if (item.type === 'vela')      { fill='#ff9010'; r=Math.min(item.w,item.h)*3.5; }
     if (!fill) continue;
     ll.appendChild(el('circle', { cx, cy, r, fill, 'fill-opacity':'1', filter:'url(#filter-ambient)', class:'night-bloom' }));
   }
@@ -1593,6 +1602,161 @@ function drawCuina(g, item, sel) {
     g.appendChild(el('rect', { x:-.12, y:-.12, width:w+.24, height:h+.24, fill:'none', stroke:'#fff', 'stroke-width':'.1', rx:'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
     for (const [cx,cy] of [[0,0],[w,0],[0,h],[w,h]])
       g.appendChild(el('rect', { x:cx-.22, y:cy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
+// ─── LIVING FARDOS ────────────────────────────────────────
+function drawLivingFardos(g, item, sel) {
+  const w = item.w, h = item.h;
+  const cx = w/2, cy = h/2;
+  const sD  = Math.min(w, h) * .19;
+  const sWH = Math.min(w * .68, h * .8);
+  const sWV = Math.min(h * .68, w * .8);
+  const bR  = sD * .44; // radio de un fardo individual
+
+  // Sombra
+  g.appendChild(el('rect', { x:.04, y:.05, width:w, height:h, fill:'#000', 'fill-opacity':'.15', rx:'.08', 'pointer-events':'none' }));
+
+  // Función auxiliar: dibuja un fardo redondo
+  function bale(bcx, bcy) {
+    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR, fill:'#c4a028', stroke:'#8a6c10', 'stroke-width':'.03' }));
+    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.66, fill:'none', stroke:'#d4b030', 'stroke-width':'.022' }));
+    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.34, fill:'#d8bc40', 'fill-opacity':'.75' }));
+    for (let a=0;a<6;a++) {
+      const rad=a*Math.PI/3;
+      g.appendChild(el('line', {
+        x1:(bcx+Math.cos(rad)*bR*.28).toFixed(2), y1:(bcy+Math.sin(rad)*bR*.28).toFixed(2),
+        x2:(bcx+Math.cos(rad)*bR*.88).toFixed(2), y2:(bcy+Math.sin(rad)*bR*.88).toFixed(2),
+        stroke:'#9a7018', 'stroke-width':'.011', 'pointer-events':'none',
+      }));
+    }
+  }
+
+  // ── 4 FARDOS (uno por lado, como sofás) ──
+  // Norte: fila de fardos
+  const nBalesH = Math.max(2, Math.round(sWH / (bR*2.1)));
+  const nSpH = sWH / nBalesH;
+  for (let i=0; i<nBalesH; i++) bale(cx - sWH/2 + (i+.5)*nSpH, bR*1.02);
+  // Sur
+  for (let i=0; i<nBalesH; i++) bale(cx - sWH/2 + (i+.5)*nSpH, h - bR*1.02);
+  // Oeste
+  const nBalesV = Math.max(2, Math.round(sWV / (bR*2.1)));
+  const nSpV = sWV / nBalesV;
+  for (let i=0; i<nBalesV; i++) bale(bR*1.02, cy - sWV/2 + (i+.5)*nSpV);
+  // Este
+  for (let i=0; i<nBalesV; i++) bale(w - bR*1.02, cy - sWV/2 + (i+.5)*nSpV);
+
+  // ── MESA DE MADERA central ──
+  const tW = sWH * .32, tH = sWV * .28;
+  g.appendChild(el('rect', { x:cx-tW/2+.04, y:cy-tH/2+.05, width:tW, height:tH, fill:'#000', 'fill-opacity':'.18', rx:'.07', 'pointer-events':'none' }));
+  g.appendChild(el('rect', { x:cx-tW/2, y:cy-tH/2, width:tW, height:tH, fill:'#9a5c22', stroke:'#6a3c10', 'stroke-width':'.028', rx:'.07' }));
+  // Veta de madera
+  g.appendChild(el('rect', { x:cx-tW/2+.04, y:cy-tH/2+.03, width:tW-.08, height:tH*.32, fill:'#b87030', 'fill-opacity':'.4', rx:'.04', 'pointer-events':'none' }));
+  g.appendChild(el('rect', { x:cx-tW/2, y:cy-tH/2, width:tW, height:tH*.08, fill:'#c07830', 'fill-opacity':'.35', rx:'.07', 'pointer-events':'none' }));
+
+  // Label
+  const lbl = el('text', { x:cx, y:h+.36, 'text-anchor':'middle', 'font-size':'.34', fill:'#c8a828', 'font-family':'Courier New', 'fill-opacity':'.9', 'pointer-events':'none' });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+  const dim = el('text', { x:cx, y:h+.58, 'text-anchor':'middle', 'font-size':'.26', fill:'#c8a828', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
+  dim.textContent = `${w} × ${h} m`;
+  g.appendChild(dim);
+
+  g.appendChild(el('rect', { x:0, y:0, width:w, height:h, fill:'none', 'pointer-events':'all' }));
+  if (sel) {
+    g.appendChild(el('rect', { x:-.12, y:-.12, width:w+.24, height:h+.24, fill:'none', stroke:'#fff', 'stroke-width':'.1', rx:'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
+    for (const [hx,hy] of [[0,0],[w,0],[0,h],[w,h]])
+      g.appendChild(el('rect', { x:hx-.22, y:hy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
+// ─── VELA DE PISO ─────────────────────────────────────────
+function drawVela(g, item, sel) {
+  const s  = Math.min(item.w, item.h);
+  const cx = item.w / 2, cy = item.h / 2;
+  const r  = s * .44;  // radio de la bolsita
+  // Offset para que cada vela parpadee en fase diferente
+  const phase = `${((item.id || 0) % 9) * .09}s`;
+
+  // ── Bloom de calor (luz cálida de vela, muy visible en noche) ──
+  g.appendChild(el('circle', {
+    cx, cy, r: r * 9,
+    fill: '#ff9010', 'fill-opacity': '1',
+    filter: 'url(#filter-led-bloom)',
+    'pointer-events': 'none',
+    class: 'led-bloom',
+  }));
+
+  // Sombra de la bolsita
+  g.appendChild(el('rect', {
+    x: cx-r+.02, y: cy-r+.025, width: r*2, height: r*2,
+    fill: '#000', 'fill-opacity': '.22', rx: r*.14, 'pointer-events': 'none',
+  }));
+
+  // ── Bolsita de papel madera ──
+  g.appendChild(el('rect', {
+    x: cx-r, y: cy-r, width: r*2, height: r*2,
+    fill: '#c49848', stroke: '#8a6820', 'stroke-width': '.025', rx: r*.12,
+  }));
+  // Borde doblado (el pliegue de la bolsa de papel)
+  g.appendChild(el('rect', {
+    x: cx-r+.015, y: cy-r+.015, width: r*2-.03, height: r*2-.03,
+    fill: 'none', stroke: '#d4b060', 'stroke-width': '.015',
+    rx: r*.1, 'pointer-events': 'none',
+  }));
+
+  // ── Resplandor cálido del papel (la vela ilumina desde adentro) ──
+  const glow = el('rect', {
+    x: cx-r*.82, y: cy-r*.82, width: r*1.64, height: r*1.64,
+    fill: '#ffcc30', 'fill-opacity': '.52', rx: r*.08, 'pointer-events': 'none',
+  });
+  glow.appendChild(makeSMIL('fill-opacity', '.45;.65;.50;.60;.45', '.7s', phase));
+  g.appendChild(glow);
+
+  // ── Llama principal (flickeo orgánico con SMIL) ──
+  const flame = el('circle', {
+    cx, cy: (cy - r*.08).toFixed(3), r: (r*.3).toFixed(3),
+    fill: '#ff8810', 'pointer-events': 'none',
+  });
+  flame.appendChild(makeSMIL('r',
+    `${(r*.26).toFixed(3)};${(r*.36).toFixed(3)};${(r*.28).toFixed(3)};${(r*.33).toFixed(3)};${(r*.26).toFixed(3)}`,
+    '.62s', phase));
+  flame.appendChild(makeSMIL('fill',
+    '#ff8810;#ffb020;#ff7008;#ffa018;#ff8810', '.62s', phase));
+  flame.appendChild(makeSMIL('cx',
+    `${cx};${(cx+r*.07).toFixed(3)};${cx};${(cx-r*.05).toFixed(3)};${cx}`,
+    '.82s', phase));
+  g.appendChild(flame);
+
+  // ── Núcleo brillante de la llama (punto blanco-amarillo) ──
+  const tip = el('circle', {
+    cx, cy: (cy - r*.18).toFixed(3), r: (r*.14).toFixed(3),
+    fill: '#fff8c0', 'fill-opacity': '.92', 'pointer-events': 'none',
+  });
+  tip.appendChild(makeSMIL('r',
+    `${(r*.11).toFixed(3)};${(r*.18).toFixed(3)};${(r*.12).toFixed(3)};${(r*.16).toFixed(3)};${(r*.11).toFixed(3)}`,
+    '.55s', phase));
+  tip.appendChild(makeSMIL('cy',
+    `${(cy-r*.18).toFixed(3)};${(cy-r*.24).toFixed(3)};${(cy-r*.16).toFixed(3)};${(cy-r*.22).toFixed(3)};${(cy-r*.18).toFixed(3)}`,
+    '.55s', phase));
+  tip.appendChild(makeSMIL('cx',
+    `${cx};${(cx+r*.04).toFixed(3)};${cx};${(cx-r*.04).toFixed(3)};${cx}`,
+    '.75s', phase));
+  g.appendChild(tip);
+
+  // Hit area
+  g.appendChild(el('circle', {
+    cx, cy, r: r + .06, fill: 'none', 'pointer-events': 'all',
+  }));
+
+  if (sel) {
+    g.appendChild(el('rect', {
+      x: cx-r-.1, y: cy-r-.1, width: r*2+.2, height: r*2+.2,
+      fill: 'none', stroke: '#fff', 'stroke-width': '.08',
+      rx: r*.14, 'stroke-dasharray': '.2,.12', 'pointer-events': 'none',
+    }));
+    for (const [hx, hy] of [[cx-r, cy-r],[cx+r, cy-r],[cx-r, cy+r],[cx+r, cy+r]])
+      g.appendChild(el('rect', { x:hx-.18, y:hy-.18, width:.36, height:.36, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.055', rx:'.07', 'pointer-events':'none' }));
   }
 }
 
@@ -1803,6 +1967,8 @@ function itemSubLabel(it) {
   if (it.type === 'cuina')     return `${it.w} × ${it.h} m · catering`;
   if (it.type === 'barra')     return `${it.w} m · fardos`;
   if (it.type === 'living')    return `${it.w} × ${it.h} m · living`;
+  if (it.type === 'vela')      return `vela · ${it.w} m`;
+  if (it.type === 'livingf')   return `${it.w} × ${it.h} m · fardos`;
   if (it.type === 'texto')     return `etiqueta`;
   return `${it.w} × ${it.h} m`;
 }
@@ -2068,6 +2234,12 @@ document.getElementById('i-type').addEventListener('change', e => {
   } else if (e.target.value === 'living') {
     document.getElementById('i-w').value = 3.5;
     document.getElementById('i-h').value = 3.5;
+  } else if (e.target.value === 'livingf') {
+    document.getElementById('i-w').value = 3.5;
+    document.getElementById('i-h').value = 3.5;
+  } else if (e.target.value === 'vela') {
+    document.getElementById('i-w').value = 0.3;
+    document.getElementById('i-h').value = 0.3;
   } else if (e.target.value === 'texto') {
     document.getElementById('i-w').value = 3;
     document.getElementById('i-h').value = 0.5;
