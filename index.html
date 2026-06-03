@@ -210,10 +210,10 @@ body.night .pista-beam { opacity: .75; }
   52%       { opacity: .10; }
 }
 @keyframes reflector-flicker-night {
-  0%, 100% { opacity: .55; }
-  48%       { opacity: .72; }
-  50%       { opacity: .60; }
-  52%       { opacity: .75; }
+  0%, 100% { opacity: .28; }
+  48%       { opacity: .36; }
+  50%       { opacity: .30; }
+  52%       { opacity: .38; }
 }
 .reflector-beam        { animation: reflector-flicker       4s ease-in-out infinite; }
 body.night .reflector-beam { animation: reflector-flicker-night 4s ease-in-out infinite; }
@@ -1479,7 +1479,7 @@ function rebuildLightLayer() {
     let fill = null, r = 0;
     const cx = item.x + item.w/2, cy = item.y + item.h/2;
     if (item.type === 'bombita')  { fill='#ffd060'; r=item.w/2+.8; }
-    else if (item.type === 'reflector') { fill='#fffce0'; r=Math.max(item.w,item.h)*7; }
+    else if (item.type === 'reflector') { fill='#fffce0'; r=Math.max(item.w,item.h)*4.5; }
     else if (item.type === 'bebedero')  { fill='#40b0ff'; r=item.w/2+1.0; }
     else if (item.type === 'pista' && item.lightsOn) { fill='#ffe0a0'; r=Math.max(item.w,item.h)*.8; }
     else if (item.type === 'cuina')     { fill='#ff8820'; r=item.w/2*.9; }
