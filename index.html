@@ -178,6 +178,30 @@ select:focus, input:focus { border-color: #9a7a50; }
 .led-bulb { animation: led-twinkle 2.2s ease-in-out infinite; }
 .led-glow { animation: led-twinkle 2.2s ease-in-out infinite; }
 
+/* ── SIDEBAR GRUPOS ── */
+.item-group { margin-bottom: 3px; }
+.group-hdr {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 7px; border-radius: 3px;
+  background: #1c1c1c; cursor: pointer; user-select: none;
+  border: 1px solid transparent;
+}
+.group-hdr:hover { border-color: #2e2e2e; }
+.group-dot  { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.group-name { flex: 1; font-size: 9px; color: #777; letter-spacing: .1em; text-transform: uppercase; }
+.group-cnt  { font-size: 9px; color: #555; background: #242424; padding: 1px 5px; border-radius: 10px; }
+.group-chev { font-size: 9px; color: #444; transition: transform .18s; }
+.group-hdr.closed .group-chev { transform: rotate(-90deg); }
+.group-body { padding-left: 6px; }
+.group-body.closed { display: none; }
+.item-row   { margin-bottom: 2px; }
+
+/* ── PISTA LUCES ── */
+.pista-beam { opacity: .1; transition: opacity .65s ease; }
+body.night .pista-beam { opacity: .75; }
+.btn-lights-on  { background: #2a2a10; color: #e8e060; border: 1px solid #5a5a18; flex: 1; }
+.btn-lights-off { background: #232323; color: #666; border: 1px solid #2e2e2e; flex: 1; }
+
 /* ── REFLECTOR ── */
 @keyframes reflector-flicker {
   0%, 100% { opacity: .06; }
@@ -288,6 +312,14 @@ body.night  .btn-night  { background: #1e1e48; color: #a0a0e0; border-color: #48
         </filter>
         <filter id="filter-reflector-beam" x="-80%" y="-80%" width="260%" height="260%">
           <feGaussianBlur stdDeviation="1.1"/>
+        </filter>
+
+        <!-- Piso de madera: veta horizontal (planks) -->
+        <filter id="filter-wood" x="-2%" y="-2%" width="104%" height="104%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.05 2.8"
+                        numOctaves="3" seed="55" result="grain"/>
+          <feColorMatrix in="grain" type="luminanceToAlpha" result="a"/>
+          <feComposite in="SourceGraphic" in2="a" operator="in"/>
         </filter>
 
         <!-- Higuera: desplazamiento orgánico para bordes irregulares -->
@@ -550,6 +582,9 @@ body.night  .btn-night  { background: #1e1e48; color: #a0a0e0; border-color: #48
         <button class="btn btn-ghost btn-sm" id="btn-rl">↺ &minus;15°</button>
         <button class="btn btn-ghost btn-sm" id="btn-rr">↻ +15°</button>
       </div>
+      <div class="frow" id="lights-row" style="display:none">
+        <button class="btn btn-lights-off btn-sm" id="btn-lights">💡 Luces OFF</button>
+      </div>
       <div class="frow">
         <button class="btn btn-ghost btn-sm" id="btn-dup">⧉ Duplicar</button>
         <button class="btn btn-del  btn-sm" id="btn-del">✕ Eliminar</button>
@@ -592,7 +627,7 @@ body.night  .btn-night  { background: #1e1e48; color: #a0a0e0; border-color: #48
 // ─── CONFIG ───────────────────────────────────────────────
 const TYPES = {
   mesa:     { label: 'Mesa',           color: '#d4a853', fg: '#1a0e00' },
-  pista:    { label: 'Pista de baile', color: '#4a7fb5', fg: '#e0eaf8' },
+  pista:    { label: 'Pista de baile', color: '#b87840', fg: '#1a0800' },
   barra:    { label: 'Barra',          color: '#8a5c35', fg: '#f0e8d8' },
   comida:   { label: 'Sector comida',  color: '#5a8a5a', fg: '#e0f0e0' },
   deco:     { label: 'Decoración',     color: '#9a5a8a', fg: '#f8e0f8' },
@@ -643,7 +678,7 @@ function clientToSVG(cx, cy) {
 const itemCache = new Map(); // id → { node, key, x, y }
 
 function itemKey(item, sel) {
-  return `${item.type}|${item.w}|${item.h}|${item.rot}|${sel?1:0}|${item.label}`;
+  return `${item.type}|${item.w}|${item.h}|${item.rot}|${sel?1:0}|${item.label}|${item.lightsOn?1:0}`;
 }
 
 // ─── RENDER ───────────────────────────────────────────────
@@ -694,7 +729,9 @@ function buildItem(item, sel) {
   });
   const inner = el('g', { transform: `rotate(${item.rot},${hw},${hh})` });
 
-  if (item.type === 'bombita') {
+  if (item.type === 'pista') {
+    drawPista(inner, item, sel);
+  } else if (item.type === 'bombita') {
     drawLedStrip(inner, item, sel);
   } else if (item.type === 'bebedero') {
     drawBebedero(inner, item, sel);
@@ -769,6 +806,145 @@ function buildItem(item, sel) {
   }, { passive: false });
 
   return outer;
+}
+
+// ─── PISTA DE BAILE ───────────────────────────────────────
+function drawPista(g, item, sel) {
+  const hw = item.w / 2, hh = item.h / 2;
+  const tm = Math.min(.28, item.w * .04); // truss margin
+  const bw = .13;  // beam width
+
+  // ── PISO DE MADERA ──
+  g.appendChild(el('rect', {
+    x: .04, y: .05, width: item.w, height: item.h,
+    fill: '#000', 'fill-opacity': '.22', rx: '.07', 'pointer-events': 'none',
+  }));
+  g.appendChild(el('rect', {
+    x: 0, y: 0, width: item.w, height: item.h,
+    fill: '#8a4218', rx: '.06',
+  }));
+  // Veta/fibra de madera (filter)
+  g.appendChild(el('rect', {
+    x: 0, y: 0, width: item.w, height: item.h,
+    fill: '#c06828', 'fill-opacity': '.55',
+    filter: 'url(#filter-wood)', rx: '.06', 'pointer-events': 'none',
+  }));
+  // Tablas: líneas horizontales (separación de tablas ~0.28m)
+  const pH = .28, pW = 1.65;
+  const nRows = Math.ceil(item.h / pH);
+  for (let r = 1; r < nRows; r++) {
+    const y = r * pH;
+    if (y >= item.h) break;
+    g.appendChild(el('line', {
+      x1: 0, y1: y, x2: item.w, y2: y,
+      stroke: '#4a1e08', 'stroke-width': '.018', 'stroke-opacity': '.7',
+      'pointer-events': 'none',
+    }));
+  }
+  // Cortes verticales de tablas (staggered, aspecto parquet)
+  for (let r = 0; r < nRows; r++) {
+    const y1 = r * pH, y2 = Math.min((r + 1) * pH, item.h);
+    const off = (r % 2) ? pW * .5 : 0;
+    for (let x = off; x < item.w; x += pW) {
+      if (x <= 0) continue;
+      g.appendChild(el('line', {
+        x1: x, y1: y1, x2: x, y2: y2,
+        stroke: '#4a1e08', 'stroke-width': '.013', 'stroke-opacity': '.45',
+        'pointer-events': 'none',
+      }));
+    }
+  }
+  // Lustre: reflejo suave en la parte superior
+  g.appendChild(el('rect', {
+    x: .04, y: .04, width: item.w - .08, height: item.h * .28,
+    fill: '#fff', 'fill-opacity': '.05', rx: '.04', 'pointer-events': 'none',
+  }));
+
+  // ── LUCES DE TRUSS (pools en el piso, debajo del truss) ──
+  if (item.lightsOn) {
+    const PCOLS = ['#4060ff','#c040e0','#40b8ff','#ff4090','#ffaa20','#40e0a0'];
+    const nL = Math.max(2, Math.round((item.w - tm * 2) / .75));
+    for (let i = 0; i < nL; i++) {
+      const lx = tm + (i + .5) * (item.w - tm * 2) / nL;
+      for (const ly of [tm + bw, item.h - tm - bw]) {
+        g.appendChild(el('ellipse', {
+          cx: lx, cy: item.h / 2,
+          rx: .85, ry: 1.1,
+          fill: PCOLS[i % PCOLS.length], 'fill-opacity': '1',
+          filter: 'url(#filter-led-bloom)',
+          'pointer-events': 'none',
+          class: 'pista-beam',
+          style: `animation-delay:${(i * .18).toFixed(2)}s`,
+        }));
+      }
+    }
+  }
+
+  // ── ESTRUCTURA TRUSS (vista desde arriba) ──
+  // Vigas: 4 lados
+  const beams = [
+    [tm, tm - bw/2, item.w - tm*2, bw],              // N
+    [tm, item.h - tm - bw/2, item.w - tm*2, bw],     // S
+    [tm - bw/2, tm, bw, item.h - tm*2],               // W
+    [item.w - tm - bw/2, tm, bw, item.h - tm*2],      // E
+  ];
+  for (const [x, y, w, h] of beams) {
+    g.appendChild(el('rect', {
+      x, y, width: w, height: h,
+      fill: '#c8c8be', stroke: '#90907e', 'stroke-width': '.018', rx: '.035',
+      'pointer-events': 'none',
+    }));
+    // Celosía (diagonal detail en la viga)
+    const isH = w > h;
+    const len = isH ? w : h;
+    const step = .28;
+    for (let s = 0; s < len; s += step) {
+      const x1 = isH ? x + s       : x,          y1 = isH ? y       : y + s;
+      const x2 = isH ? x + s + step/2 : x + w,   y2 = isH ? y + h   : y + s + step/2;
+      g.appendChild(el('line', {
+        x1, y1, x2, y2,
+        stroke: '#a0a090', 'stroke-width': '.009', 'stroke-opacity': '.6',
+        'pointer-events': 'none',
+      }));
+    }
+  }
+  // Columnas en esquinas
+  for (const [cx, cy] of [[tm,tm],[item.w-tm,tm],[tm,item.h-tm],[item.w-tm,item.h-tm]]) {
+    g.appendChild(el('circle', { cx, cy, r: .14, fill: '#b0b0a4', stroke: '#686858', 'stroke-width': '.03', 'pointer-events': 'none' }));
+    g.appendChild(el('circle', { cx, cy, r: .062, fill: '#787870', 'pointer-events': 'none' }));
+  }
+  // PAR cans en vigas N y S
+  const nCans = Math.max(2, Math.round((item.w - tm*2) / .68));
+  const LENS  = ['#6080ff','#d060ff','#50d0ff','#ff5098','#ffc040'];
+  for (let i = 0; i < nCans; i++) {
+    const cx = tm + (i + .5) * (item.w - tm*2) / nCans;
+    for (const cy of [tm, item.h - tm]) {
+      const col = item.lightsOn ? LENS[i % LENS.length] : '#383838';
+      g.appendChild(el('circle', { cx, cy, r: .095, fill: '#1e1e1e', stroke: '#505048', 'stroke-width': '.022', 'pointer-events': 'none' }));
+      const lensAttrs = { cx, cy, r: .055, fill: col, 'pointer-events': 'none' };
+      if (item.lightsOn) { lensAttrs.filter = 'url(#filter-led)'; lensAttrs.class = 'led-bulb'; lensAttrs.style = `animation-delay:${(i*.12).toFixed(2)}s`; }
+      g.appendChild(el('circle', lensAttrs));
+    }
+  }
+
+  // ── LABEL ──
+  const fs = Math.min(.72, Math.max(.32, Math.min(hw, hh) * .2));
+  const lbl = el('text', {
+    x: hw, y: hh + fs * .4,
+    'text-anchor': 'middle', 'font-size': fs,
+    fill: '#d4a870', 'font-family': 'Courier New',
+    'fill-opacity': '.65', 'pointer-events': 'none',
+  });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+
+  // ── HIT + SEL ──
+  g.appendChild(el('rect', { x: 0, y: 0, width: item.w, height: item.h, fill: 'none', 'pointer-events': 'all' }));
+  if (sel) {
+    g.appendChild(el('rect', { x: -.12, y: -.12, width: item.w + .24, height: item.h + .24, fill: 'none', stroke: '#fff', 'stroke-width': '.1', rx: '.1', 'stroke-dasharray': '.32,.2', 'pointer-events': 'none' }));
+    for (const [cx, cy] of [[0,0],[item.w,0],[0,item.h],[item.w,item.h]])
+      g.appendChild(el('rect', { x: cx-.22, y: cy-.22, width: .44, height: .44, fill: '#fff', stroke: '#4a4a4a', 'stroke-width': '.06', rx: '.08', 'pointer-events': 'none' }));
+  }
 }
 
 // ─── LED STRIP ────────────────────────────────────────────
@@ -1144,40 +1320,98 @@ function itemDimsLabel(item) {
   return `${item.w} × ${item.h} m  ·  ${item.rot}°`;
 }
 
+// grupos colapsados por tipo (true = colapsado)
+const groupStates = {};
+
 function renderSidebar() {
   const item = S.items.find(i => i.id === S.selId);
 
+  // ── Panel seleccionado ──
   const panel = document.getElementById('sel-panel');
+  const lightsRow = document.getElementById('lights-row');
+  const lightsBtn = document.getElementById('btn-lights');
   if (item) {
     panel.classList.add('visible');
     document.getElementById('sel-name').textContent = item.label;
     document.getElementById('sel-dims').textContent = itemDimsLabel(item);
+    if (item.type === 'pista') {
+      lightsRow.style.display = '';
+      lightsBtn.textContent  = item.lightsOn ? '💡 Luces ON' : '💡 Luces OFF';
+      lightsBtn.className    = `btn btn-sm ${item.lightsOn ? 'btn-lights-on' : 'btn-lights-off'}`;
+    } else {
+      lightsRow.style.display = 'none';
+    }
   } else {
     panel.classList.remove('visible');
+    lightsRow.style.display = 'none';
   }
 
+  // ── Contador total ──
   document.getElementById('item-count').textContent = S.items.length;
 
+  // ── Lista agrupada por tipo ──
   const listEl = document.getElementById('item-list');
   if (S.items.length === 0) {
     listEl.innerHTML = '<div class="empty">Sin ítems todavía</div>';
   } else {
-    listEl.innerHTML = '';
+    // Agrupar manteniendo el orden de TYPES
+    const groups = {};
     for (const it of S.items) {
-      const cfg = TYPES[it.type] || TYPES.otro;
-      const row = document.createElement('div');
-      row.className = 'item-row' + (it.id === S.selId ? ' active' : '');
-      row.innerHTML = `
-        <div class="item-dot" style="background:${cfg.color}"></div>
-        <div class="item-text">
-          <div class="item-lbl">${it.label}</div>
-          <div class="item-sub">${itemSubLabel(it)}</div>
-        </div>`;
-      row.onclick = () => { S.selId = it.id; render(); };
-      listEl.appendChild(row);
+      (groups[it.type] = groups[it.type] || []).push(it);
+    }
+    listEl.innerHTML = '';
+    for (const type of Object.keys(TYPES)) {
+      if (!groups[type]) continue;
+      const items = groups[type];
+      const cfg   = TYPES[type];
+      const open  = !groupStates[type];
+
+      const groupEl = document.createElement('div');
+      groupEl.className = 'item-group';
+
+      const hdr = document.createElement('div');
+      hdr.className = `group-hdr ${open ? 'open' : 'closed'}`;
+      hdr.innerHTML = `
+        <div class="group-dot" style="background:${cfg.color}"></div>
+        <span class="group-name">${cfg.label}</span>
+        <span class="group-cnt">${items.length}</span>
+        <span class="group-chev">▾</span>`;
+      hdr.onclick = () => { groupStates[type] = !groupStates[type]; renderSidebar(); };
+
+      const body = document.createElement('div');
+      body.className = `group-body ${open ? 'open' : 'closed'}`;
+
+      for (const it of items) {
+        const row = document.createElement('div');
+        row.className = 'item-row' + (it.id === S.selId ? ' active' : '');
+        row.innerHTML = `
+          <div class="item-dot" style="background:${cfg.color}"></div>
+          <div class="item-text">
+            <div class="item-lbl">${it.label}</div>
+            <div class="item-sub">${itemSubLabel(it)}</div>
+          </div>`;
+        row.onclick = () => { S.selId = it.id; render(); };
+        body.appendChild(row);
+      }
+
+      groupEl.append(hdr, body);
+      listEl.appendChild(groupEl);
+    }
+    // Tipos custom no en TYPES
+    for (const [type, items] of Object.entries(groups)) {
+      if (TYPES[type]) continue;
+      // fallback: mostrar plano
+      for (const it of items) {
+        const row = document.createElement('div');
+        row.className = 'item-row' + (it.id === S.selId ? ' active' : '');
+        row.innerHTML = `<div class="item-text"><div class="item-lbl">${it.label}</div></div>`;
+        row.onclick = () => { S.selId = it.id; render(); };
+        listEl.appendChild(row);
+      }
     }
   }
 
+  // ── Stats ──
   const counts = {};
   for (const it of S.items) counts[it.type] = (counts[it.type] || 0) + 1;
   const statsEl = document.getElementById('stats');
@@ -1186,12 +1420,10 @@ function renderSidebar() {
   } else {
     statsEl.innerHTML = '';
     for (const [t, n] of Object.entries(counts)) {
-      const cfg = TYPES[t] || TYPES.otro;
+      const cfg  = TYPES[t] || TYPES.otro;
       const card = document.createElement('div');
       card.className = 'stat-card';
-      card.innerHTML =
-        `<div class="stat-n" style="color:${cfg.color}">${n}</div>` +
-        `<div class="stat-l">${cfg.label}</div>`;
+      card.innerHTML = `<div class="stat-n" style="color:${cfg.color}">${n}</div><div class="stat-l">${cfg.label}</div>`;
       statsEl.appendChild(card);
     }
   }
@@ -1263,6 +1495,7 @@ function addItem() {
     x: +(27 - w / 2).toFixed(2),
     y: +(22 - h / 2).toFixed(2),
     rot: 0,
+    lightsOn: false,
   };
   S.items.push(item);
   S.selId = item.id;
@@ -1294,7 +1527,13 @@ function rotate(delta) {
 }
 
 // ─── BUTTON EVENTS ────────────────────────────────────────
-document.getElementById('btn-add').onclick = addItem;
+document.getElementById('btn-add').onclick    = addItem;
+document.getElementById('btn-lights').onclick = () => {
+  const item = S.items.find(i => i.id === S.selId);
+  if (!item || item.type !== 'pista') return;
+  item.lightsOn = !item.lightsOn;
+  save(); render();
+};
 document.getElementById('btn-rl').onclick  = () => rotate(-15);
 document.getElementById('btn-rr').onclick  = () => rotate(15);
 document.getElementById('btn-dup').onclick = dup;
@@ -1323,6 +1562,9 @@ document.getElementById('i-type').addEventListener('change', e => {
   } else if (e.target.value === 'reflector') {
     document.getElementById('i-w').value = 0.5;
     document.getElementById('i-h').value = 0.5;
+  } else if (e.target.value === 'pista') {
+    document.getElementById('i-w').value = 6;
+    document.getElementById('i-h').value = 6;
   }
 });
 
