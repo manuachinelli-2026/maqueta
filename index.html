@@ -168,6 +168,14 @@ select:focus, input:focus { border-color: #9a7a50; }
 
 .empty { font-size: 10px; color: #444; text-align: center; padding: 10px; }
 
+/* ── LED STRIP ── */
+@keyframes led-twinkle {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .28; }
+}
+.led-bulb { animation: led-twinkle 2.2s ease-in-out infinite; }
+.led-glow { animation: led-twinkle 2.2s ease-in-out infinite; }
+
 #hint {
   padding: 8px 14px;
   font-size: 9px;
@@ -191,6 +199,17 @@ select:focus, input:focus { border-color: #9a7a50; }
          viewBox="-2 -2 58 48"
          preserveAspectRatio="xMidYMid meet"
          xmlns="http://www.w3.org/2000/svg">
+
+      <!-- ── FILTER DEFS ── -->
+      <defs>
+        <filter id="filter-led" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation=".1" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
 
       <!-- ── BACKGROUNDS ── -->
       <rect x="-2" y="-2" width="58" height="48" fill="#161616"/>
@@ -360,6 +379,7 @@ select:focus, input:focus { border-color: #9a7a50; }
           <option value="barra">Barra</option>
           <option value="comida">Sector comida</option>
           <option value="deco">Decoración</option>
+          <option value="bombita">Bombita LED</option>
           <option value="otro">Otro</option>
         </select>
       </label>
@@ -425,12 +445,13 @@ select:focus, input:focus { border-color: #9a7a50; }
 
 // ─── CONFIG ───────────────────────────────────────────────
 const TYPES = {
-  mesa:   { label: 'Mesa',           color: '#d4a853', fg: '#1a0e00' },
-  pista:  { label: 'Pista de baile', color: '#4a7fb5', fg: '#e0eaf8' },
-  barra:  { label: 'Barra',          color: '#8a5c35', fg: '#f0e8d8' },
-  comida: { label: 'Sector comida',  color: '#5a8a5a', fg: '#e0f0e0' },
-  deco:   { label: 'Decoración',     color: '#9a5a8a', fg: '#f8e0f8' },
-  otro:   { label: 'Otro',           color: '#6a6a6a', fg: '#f0f0f0' },
+  mesa:    { label: 'Mesa',           color: '#d4a853', fg: '#1a0e00' },
+  pista:   { label: 'Pista de baile', color: '#4a7fb5', fg: '#e0eaf8' },
+  barra:   { label: 'Barra',          color: '#8a5c35', fg: '#f0e8d8' },
+  comida:  { label: 'Sector comida',  color: '#5a8a5a', fg: '#e0f0e0' },
+  deco:    { label: 'Decoración',     color: '#9a5a8a', fg: '#f8e0f8' },
+  bombita: { label: 'Bombita LED',    color: '#ffcc44', fg: '#3a2800' },
+  otro:    { label: 'Otro',           color: '#6a6a6a', fg: '#f0f0f0' },
 };
 
 const NS  = 'http://www.w3.org/2000/svg';
@@ -491,53 +512,57 @@ function drawItem(item) {
   // Inner g: rotation around rect center
   const inner = el('g', { transform: `rotate(${item.rot},${hw},${hh})` });
 
-  // Body
-  inner.appendChild(el('rect', {
-    x: 0, y: 0, width: item.w, height: item.h,
-    fill: cfg.color,
-    'fill-opacity': sel ? '1' : '.82',
-    stroke: sel ? '#ffffff' : '#00000033',
-    'stroke-width': sel ? '.14' : '.07',
-    rx: '.12',
-  }));
+  if (item.type === 'bombita') {
+    drawLedStrip(inner, item, sel);
+  } else {
+    // Body
+    inner.appendChild(el('rect', {
+      x: 0, y: 0, width: item.w, height: item.h,
+      fill: cfg.color,
+      'fill-opacity': sel ? '1' : '.82',
+      stroke: sel ? '#ffffff' : '#00000033',
+      'stroke-width': sel ? '.14' : '.07',
+      rx: '.12',
+    }));
 
-  // Label
-  const fs = Math.min(.92, Math.max(.44, Math.min(hw, hh) * .5));
-  const lbl = el('text', {
-    x: hw, y: hh + fs * .38,
-    'text-anchor': 'middle',
-    'font-size': fs,
-    fill: cfg.fg,
-    'font-family': 'Courier New',
-    'pointer-events': 'none',
-  });
-  lbl.textContent = item.label;
-  inner.appendChild(lbl);
-
-  // Dimension text (skip if too small)
-  if (item.w >= 1.5 || item.h >= 1.5) {
-    const dfs = fs * .7;
-    const dim = el('text', {
-      x: hw, y: hh + fs * .38 + dfs * 1.35,
+    // Label
+    const fs = Math.min(.92, Math.max(.44, Math.min(hw, hh) * .5));
+    const lbl = el('text', {
+      x: hw, y: hh + fs * .38,
       'text-anchor': 'middle',
-      'font-size': dfs,
+      'font-size': fs,
       fill: cfg.fg,
       'font-family': 'Courier New',
-      'fill-opacity': '.6',
       'pointer-events': 'none',
     });
-    dim.textContent = `${item.w}×${item.h} m`;
-    inner.appendChild(dim);
-  }
+    lbl.textContent = item.label;
+    inner.appendChild(lbl);
 
-  // Selection corner handles
-  if (sel) {
-    for (const [cx, cy] of [[0,0],[item.w,0],[0,item.h],[item.w,item.h]]) {
-      inner.appendChild(el('rect', {
-        x: cx-.22, y: cy-.22, width: .44, height: .44,
-        fill: '#fff', stroke: '#4a4a4a', 'stroke-width': '.06',
-        rx: '.08', 'pointer-events': 'none',
-      }));
+    // Dimension text (skip if too small)
+    if (item.w >= 1.5 || item.h >= 1.5) {
+      const dfs = fs * .7;
+      const dim = el('text', {
+        x: hw, y: hh + fs * .38 + dfs * 1.35,
+        'text-anchor': 'middle',
+        'font-size': dfs,
+        fill: cfg.fg,
+        'font-family': 'Courier New',
+        'fill-opacity': '.6',
+        'pointer-events': 'none',
+      });
+      dim.textContent = `${item.w}×${item.h} m`;
+      inner.appendChild(dim);
+    }
+
+    // Selection corner handles
+    if (sel) {
+      for (const [cx, cy] of [[0,0],[item.w,0],[0,item.h],[item.w,item.h]]) {
+        inner.appendChild(el('rect', {
+          x: cx-.22, y: cy-.22, width: .44, height: .44,
+          fill: '#fff', stroke: '#4a4a4a', 'stroke-width': '.06',
+          rx: '.08', 'pointer-events': 'none',
+        }));
+      }
     }
   }
 
@@ -560,6 +585,86 @@ function drawItem(item) {
   layer.appendChild(outer);
 }
 
+function drawLedStrip(g, item, sel) {
+  const nBulbs  = Math.max(3, Math.round(item.w / 0.45));
+  const spacing = item.w / nBulbs;
+  const cableY  = item.h * .45;
+  const bulbR   = Math.min(.22, item.h * .38);
+
+  // Cable
+  g.appendChild(el('line', {
+    x1: 0, y1: cableY, x2: item.w, y2: cableY,
+    stroke: '#3a2800', 'stroke-width': '.07',
+    'stroke-linecap': 'round',
+    'pointer-events': 'none',
+  }));
+
+  // Bulbs with staggered animation
+  for (let i = 0; i < nBulbs; i++) {
+    const cx    = (i + .5) * spacing;
+    const delay = ((i * .13) % 2.2).toFixed(2);
+
+    // Outer glow halo
+    g.appendChild(el('circle', {
+      cx, cy: cableY, r: bulbR * 2.4,
+      fill: '#ffdd66', 'fill-opacity': '.15',
+      'pointer-events': 'none',
+      class: 'led-glow',
+      style: `animation-delay:${delay}s`,
+    }));
+
+    // Bulb body
+    const bulb = el('circle', {
+      cx, cy: cableY, r: bulbR,
+      fill: '#ffe566', stroke: '#cc9900', 'stroke-width': '.04',
+      filter: 'url(#filter-led)',
+      'pointer-events': 'none',
+      class: 'led-bulb',
+      style: `animation-delay:${delay}s`,
+    });
+    g.appendChild(bulb);
+  }
+
+  // Label
+  const lblEl = el('text', {
+    x: item.w / 2, y: item.h + .38,
+    'text-anchor': 'middle',
+    'font-size': '.38',
+    fill: '#ffcc44', 'font-family': 'Courier New',
+    'fill-opacity': '.8', 'pointer-events': 'none',
+  });
+  lblEl.textContent = item.label;
+  g.appendChild(lblEl);
+
+  // Dimension
+  const dimEl = el('text', {
+    x: item.w / 2, y: item.h + .65,
+    'text-anchor': 'middle',
+    'font-size': '.3',
+    fill: '#ffcc44', 'font-family': 'Courier New',
+    'fill-opacity': '.45', 'pointer-events': 'none',
+  });
+  dimEl.textContent = `${item.w} m`;
+  g.appendChild(dimEl);
+
+  // Selection highlight
+  if (sel) {
+    g.appendChild(el('rect', {
+      x: -.15, y: -.15, width: item.w + .3, height: item.h + .3,
+      fill: 'none', stroke: '#ffffff', 'stroke-width': '.1',
+      rx: '.12', 'stroke-dasharray': '.32,.2',
+      'pointer-events': 'none',
+    }));
+    for (const [cx, cy] of [[0,0],[item.w,0],[0,item.h],[item.w,item.h]]) {
+      g.appendChild(el('rect', {
+        x: cx-.22, y: cy-.22, width: .44, height: .44,
+        fill: '#fff', stroke: '#4a4a4a', 'stroke-width': '.06',
+        rx: '.08', 'pointer-events': 'none',
+      }));
+    }
+  }
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────
 function renderSidebar() {
   const item = S.items.find(i => i.id === S.selId);
@@ -570,7 +675,9 @@ function renderSidebar() {
     panel.classList.add('visible');
     document.getElementById('sel-name').textContent = item.label;
     document.getElementById('sel-dims').textContent =
-      `${item.w} × ${item.h} m  ·  ${item.rot}°`;
+      item.type === 'bombita'
+        ? `${item.w} m · tira LED · ${item.rot}°`
+        : `${item.w} × ${item.h} m  ·  ${item.rot}°`;
   } else {
     panel.classList.remove('visible');
   }
@@ -592,7 +699,7 @@ function renderSidebar() {
         <div class="item-dot" style="background:${cfg.color}"></div>
         <div class="item-text">
           <div class="item-lbl">${it.label}</div>
-          <div class="item-sub">${it.w} × ${it.h} m</div>
+          <div class="item-sub">${it.type === 'bombita' ? it.w + ' m · tira LED' : it.w + ' × ' + it.h + ' m'}</div>
         </div>`;
       row.onclick = () => { S.selId = it.id; render(); };
       listEl.appendChild(row);
@@ -738,6 +845,10 @@ document.getElementById('i-label').addEventListener('keydown', e => {
 document.getElementById('i-type').addEventListener('change', e => {
   document.getElementById('i-label').placeholder =
     (TYPES[e.target.value]?.label || '') + ' 1';
+  if (e.target.value === 'bombita') {
+    document.getElementById('i-w').value = 10;
+    document.getElementById('i-h').value = 0.6;
+  }
 });
 
 // ─── INIT ─────────────────────────────────────────────────
