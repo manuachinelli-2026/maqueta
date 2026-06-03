@@ -8,12 +8,14 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --col-mesa:   #d4a853;
-  --col-pista:  #4a7fb5;
-  --col-barra:  #8a5c35;
-  --col-comida: #5a8a5a;
-  --col-deco:   #9a5a8a;
-  --col-otro:   #6a6a6a;
+  --col-mesa:     #d4a853;
+  --col-pista:    #4a7fb5;
+  --col-barra:    #8a5c35;
+  --col-comida:   #5a8a5a;
+  --col-deco:     #9a5a8a;
+  --col-bombita:  #ffcc44;
+  --col-bebedero: #4aacdc;
+  --col-otro:     #6a6a6a;
 }
 
 body {
@@ -176,6 +178,23 @@ select:focus, input:focus { border-color: #9a7a50; }
 .led-bulb { animation: led-twinkle 2.2s ease-in-out infinite; }
 .led-glow { animation: led-twinkle 2.2s ease-in-out infinite; }
 
+/* ── BEBEDERO ── */
+@keyframes beb-shimmer {
+  0%, 100% { opacity: .45; }
+  50%       { opacity: .82; }
+}
+@keyframes beb-sparkle {
+  0%, 75%, 100% { opacity: 0; }
+  38%            { opacity: 1; }
+}
+@keyframes beb-can-gleam {
+  0%, 80%, 100% { opacity: .75; }
+  40%            { opacity: 1; }
+}
+.beb-shimmer  { animation: beb-shimmer  3.8s ease-in-out infinite; }
+.beb-sparkle  { animation: beb-sparkle  3.2s ease-in-out infinite; }
+.beb-can      { animation: beb-can-gleam 4s  ease-in-out infinite; }
+
 #hint {
   padding: 8px 14px;
   font-size: 9px;
@@ -208,6 +227,18 @@ select:focus, input:focus { border-color: #9a7a50; }
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
+        </filter>
+        <filter id="filter-cold" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation=".07" result="blur"/>
+          <feFlood flood-color="#60c8ff" flood-opacity=".35" result="color"/>
+          <feComposite in="color" in2="blur" operator="in" result="glow"/>
+          <feMerge>
+            <feMergeNode in="glow"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <filter id="filter-item-shadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx=".06" dy=".08" stdDeviation=".06" flood-color="#000" flood-opacity=".4"/>
         </filter>
       </defs>
 
@@ -318,20 +349,15 @@ select:focus, input:focus { border-color: #9a7a50; }
             transform="translate(55.8,22) rotate(90)">ÁLAMOS · E</text>
 
       <!-- ── PALENQUE ── -->
-      <!-- 3m de divisoria (x=30), 5m del borde sur (bottom=39, top=35), 4×1m vertical -->
       <rect x="30" y="35" width="1" height="4"
             fill="#9a8870" stroke="#7a7060" stroke-width=".14"/>
       <text x="31.8" y="37.8"
             font-size=".74" fill="#7a7060" font-family="Courier New">PALENQUE · 4 × 1 M</text>
 
       <!-- ── CERCO EXTERIOR ── -->
-      <!-- Norte (gap en tranquera x=51.5 a 54) -->
       <line x1="0" y1="0" x2="51.5" y2="0" stroke="#444" stroke-width=".28"/>
-      <!-- Sur -->
       <line x1="0" y1="44" x2="54" y2="44" stroke="#444" stroke-width=".28"/>
-      <!-- Oeste -->
       <line x1="0" y1="0" x2="0" y2="44" stroke="#444" stroke-width=".28"/>
-      <!-- Este -->
       <line x1="54" y1="0" x2="54" y2="44" stroke="#444" stroke-width=".28"/>
 
       <!-- ── BRÚJULA ── -->
@@ -380,6 +406,7 @@ select:focus, input:focus { border-color: #9a7a50; }
           <option value="comida">Sector comida</option>
           <option value="deco">Decoración</option>
           <option value="bombita">Bombita LED</option>
+          <option value="bebedero">Bebedero</option>
           <option value="otro">Otro</option>
         </select>
       </label>
@@ -445,13 +472,14 @@ select:focus, input:focus { border-color: #9a7a50; }
 
 // ─── CONFIG ───────────────────────────────────────────────
 const TYPES = {
-  mesa:    { label: 'Mesa',           color: '#d4a853', fg: '#1a0e00' },
-  pista:   { label: 'Pista de baile', color: '#4a7fb5', fg: '#e0eaf8' },
-  barra:   { label: 'Barra',          color: '#8a5c35', fg: '#f0e8d8' },
-  comida:  { label: 'Sector comida',  color: '#5a8a5a', fg: '#e0f0e0' },
-  deco:    { label: 'Decoración',     color: '#9a5a8a', fg: '#f8e0f8' },
-  bombita: { label: 'Bombita LED',    color: '#ffcc44', fg: '#3a2800' },
-  otro:    { label: 'Otro',           color: '#6a6a6a', fg: '#f0f0f0' },
+  mesa:     { label: 'Mesa',           color: '#d4a853', fg: '#1a0e00' },
+  pista:    { label: 'Pista de baile', color: '#4a7fb5', fg: '#e0eaf8' },
+  barra:    { label: 'Barra',          color: '#8a5c35', fg: '#f0e8d8' },
+  comida:   { label: 'Sector comida',  color: '#5a8a5a', fg: '#e0f0e0' },
+  deco:     { label: 'Decoración',     color: '#9a5a8a', fg: '#f8e0f8' },
+  bombita:  { label: 'Bombita LED',    color: '#ffcc44', fg: '#3a2800' },
+  bebedero: { label: 'Bebedero',       color: '#4aacdc', fg: '#001828' },
+  otro:     { label: 'Otro',           color: '#6a6a6a', fg: '#f0f0f0' },
 };
 
 const NS  = 'http://www.w3.org/2000/svg';
@@ -459,7 +487,7 @@ const KEY = 'casco-maqueta-v1';
 
 // ─── STATE ────────────────────────────────────────────────
 let S    = { items: [], selId: null, nextId: 1 };
-let drag = null; // { id, offX, offY }
+let drag = null;
 
 // ─── PERSISTENCE ──────────────────────────────────────────
 function save() {
@@ -499,62 +527,65 @@ function render() {
 function drawItem(item) {
   const cfg = TYPES[item.type] || TYPES.otro;
   const sel = item.id === S.selId;
-  const hw = item.w / 2;
-  const hh = item.h / 2;
+  const hw  = item.w / 2;
+  const hh  = item.h / 2;
 
-  // Outer g: position (translate)
   const outer = el('g', {
     'data-id': item.id,
     transform: `translate(${item.x},${item.y})`,
     cursor: 'grab',
   });
-
-  // Inner g: rotation around rect center
   const inner = el('g', { transform: `rotate(${item.rot},${hw},${hh})` });
 
   if (item.type === 'bombita') {
     drawLedStrip(inner, item, sel);
+  } else if (item.type === 'bebedero') {
+    drawBebedero(inner, item, sel);
   } else {
+    // Drop shadow
+    inner.appendChild(el('rect', {
+      x: .04, y: .05, width: item.w, height: item.h,
+      fill: '#000', 'fill-opacity': '.22', rx: '.12',
+      'pointer-events': 'none',
+    }));
     // Body
     inner.appendChild(el('rect', {
       x: 0, y: 0, width: item.w, height: item.h,
       fill: cfg.color,
-      'fill-opacity': sel ? '1' : '.82',
+      'fill-opacity': sel ? '1' : '.88',
       stroke: sel ? '#ffffff' : '#00000033',
       'stroke-width': sel ? '.14' : '.07',
       rx: '.12',
     }));
+    // Top highlight gleam
+    inner.appendChild(el('rect', {
+      x: .06, y: .05, width: item.w - .12, height: Math.min(.18, hh * .4),
+      fill: '#fff', 'fill-opacity': '.14', rx: '.08',
+      'pointer-events': 'none',
+    }));
 
-    // Label
-    const fs = Math.min(.92, Math.max(.44, Math.min(hw, hh) * .5));
+    const fs  = Math.min(.92, Math.max(.44, Math.min(hw, hh) * .5));
     const lbl = el('text', {
       x: hw, y: hh + fs * .38,
-      'text-anchor': 'middle',
-      'font-size': fs,
-      fill: cfg.fg,
-      'font-family': 'Courier New',
+      'text-anchor': 'middle', 'font-size': fs,
+      fill: cfg.fg, 'font-family': 'Courier New',
       'pointer-events': 'none',
     });
     lbl.textContent = item.label;
     inner.appendChild(lbl);
 
-    // Dimension text (skip if too small)
     if (item.w >= 1.5 || item.h >= 1.5) {
       const dfs = fs * .7;
       const dim = el('text', {
         x: hw, y: hh + fs * .38 + dfs * 1.35,
-        'text-anchor': 'middle',
-        'font-size': dfs,
-        fill: cfg.fg,
-        'font-family': 'Courier New',
-        'fill-opacity': '.6',
-        'pointer-events': 'none',
+        'text-anchor': 'middle', 'font-size': dfs,
+        fill: cfg.fg, 'font-family': 'Courier New',
+        'fill-opacity': '.6', 'pointer-events': 'none',
       });
       dim.textContent = `${item.w}×${item.h} m`;
       inner.appendChild(dim);
     }
 
-    // Selection corner handles
     if (sel) {
       for (const [cx, cy] of [[0,0],[item.w,0],[0,item.h],[item.w,item.h]]) {
         inner.appendChild(el('rect', {
@@ -568,92 +599,245 @@ function drawItem(item) {
 
   outer.appendChild(inner);
 
-  // Mouse events
   outer.addEventListener('mousedown', e => {
     e.stopPropagation();
     beginDrag(e.clientX, e.clientY, item.id);
   });
-
-  // Touch events
   outer.addEventListener('touchstart', e => {
     e.preventDefault();
     e.stopPropagation();
-    const t = e.touches[0];
-    beginDrag(t.clientX, t.clientY, item.id);
+    beginDrag(e.touches[0].clientX, e.touches[0].clientY, item.id);
   }, { passive: false });
 
   layer.appendChild(outer);
 }
 
+// ─── LED STRIP ────────────────────────────────────────────
 function drawLedStrip(g, item, sel) {
   const nBulbs  = Math.max(3, Math.round(item.w / 0.45));
   const spacing = item.w / nBulbs;
-  const cableY  = item.h * .45;
-  const bulbR   = Math.min(.22, item.h * .38);
+  const cableY  = item.h * .5;
+  const bulbR   = Math.min(.22, item.h * .4);
 
-  // Cable
-  g.appendChild(el('line', {
-    x1: 0, y1: cableY, x2: item.w, y2: cableY,
-    stroke: '#3a2800', 'stroke-width': '.07',
-    'stroke-linecap': 'round',
-    'pointer-events': 'none',
+  // PCB strip base (dark bar)
+  g.appendChild(el('rect', {
+    x: 0, y: cableY - bulbR * .55, width: item.w, height: bulbR * 1.1,
+    fill: '#1a1000', rx: '.04', 'pointer-events': 'none',
+  }));
+  // PCB strip highlight
+  g.appendChild(el('rect', {
+    x: 0, y: cableY - bulbR * .55, width: item.w, height: bulbR * .25,
+    fill: '#3a2800', 'fill-opacity': '.7', rx: '.04', 'pointer-events': 'none',
   }));
 
-  // Bulbs with staggered animation
   for (let i = 0; i < nBulbs; i++) {
     const cx    = (i + .5) * spacing;
     const delay = ((i * .13) % 2.2).toFixed(2);
 
-    // Outer glow halo
     g.appendChild(el('circle', {
       cx, cy: cableY, r: bulbR * 2.4,
-      fill: '#ffdd66', 'fill-opacity': '.15',
+      fill: '#ffdd66', 'fill-opacity': '.13',
       'pointer-events': 'none',
       class: 'led-glow',
       style: `animation-delay:${delay}s`,
     }));
-
-    // Bulb body
-    const bulb = el('circle', {
+    g.appendChild(el('circle', {
       cx, cy: cableY, r: bulbR,
-      fill: '#ffe566', stroke: '#cc9900', 'stroke-width': '.04',
+      fill: '#ffe566', stroke: '#cc9900', 'stroke-width': '.035',
       filter: 'url(#filter-led)',
       'pointer-events': 'none',
       class: 'led-bulb',
       style: `animation-delay:${delay}s`,
-    });
-    g.appendChild(bulb);
+    }));
   }
 
-  // Label
   const lblEl = el('text', {
     x: item.w / 2, y: item.h + .38,
-    'text-anchor': 'middle',
-    'font-size': '.38',
+    'text-anchor': 'middle', 'font-size': '.38',
     fill: '#ffcc44', 'font-family': 'Courier New',
-    'fill-opacity': '.8', 'pointer-events': 'none',
+    'fill-opacity': '.82', 'pointer-events': 'none',
   });
   lblEl.textContent = item.label;
   g.appendChild(lblEl);
 
-  // Dimension
   const dimEl = el('text', {
     x: item.w / 2, y: item.h + .65,
-    'text-anchor': 'middle',
-    'font-size': '.3',
+    'text-anchor': 'middle', 'font-size': '.3',
     fill: '#ffcc44', 'font-family': 'Courier New',
     'fill-opacity': '.45', 'pointer-events': 'none',
   });
   dimEl.textContent = `${item.w} m`;
   g.appendChild(dimEl);
 
-  // Selection highlight
   if (sel) {
     g.appendChild(el('rect', {
       x: -.15, y: -.15, width: item.w + .3, height: item.h + .3,
-      fill: 'none', stroke: '#ffffff', 'stroke-width': '.1',
-      rx: '.12', 'stroke-dasharray': '.32,.2',
+      fill: 'none', stroke: '#fff', 'stroke-width': '.1',
+      rx: '.12', 'stroke-dasharray': '.32,.2', 'pointer-events': 'none',
+    }));
+    for (const [cx, cy] of [[0,0],[item.w,0],[0,item.h],[item.w,item.h]]) {
+      g.appendChild(el('rect', {
+        x: cx-.22, y: cy-.22, width: .44, height: .44,
+        fill: '#fff', stroke: '#4a4a4a', 'stroke-width': '.06',
+        rx: '.08', 'pointer-events': 'none',
+      }));
+    }
+  }
+}
+
+// ─── BEBEDERO ─────────────────────────────────────────────
+function drawBebedero(g, item, sel) {
+  const brd = 0.055;
+  const iX  = brd, iY = brd;
+  const iW  = item.w - brd * 2;
+  const iH  = item.h - brd * 2;
+
+  // Drop shadow
+  g.appendChild(el('rect', {
+    x: .03, y: .04, width: item.w, height: item.h,
+    fill: '#000', 'fill-opacity': '.35', rx: '.06',
+    'pointer-events': 'none',
+  }));
+
+  // Outer steel trough frame
+  g.appendChild(el('rect', {
+    x: 0, y: 0, width: item.w, height: item.h,
+    fill: '#5a3d1e', stroke: '#2c1a08', 'stroke-width': '.04', rx: '.06',
+  }));
+  // Frame top rim highlight
+  g.appendChild(el('rect', {
+    x: .01, y: .01, width: item.w - .02, height: brd * .5,
+    fill: '#9a6838', 'fill-opacity': '.55', rx: '.04',
+    'pointer-events': 'none',
+  }));
+  // Frame bottom shadow
+  g.appendChild(el('rect', {
+    x: .01, y: item.h - brd * .4, width: item.w - .02, height: brd * .4,
+    fill: '#1a0c04', 'fill-opacity': '.4', rx: '.03',
+    'pointer-events': 'none',
+  }));
+
+  // Ice/water base fill (static dark blue)
+  g.appendChild(el('rect', {
+    x: iX, y: iY, width: iW, height: iH,
+    fill: '#3a88b0', rx: '.03', 'pointer-events': 'none',
+  }));
+  // Ice shimmer overlay (animated lighter blue)
+  g.appendChild(el('rect', {
+    x: iX, y: iY, width: iW, height: iH,
+    fill: '#90d4f8', rx: '.03',
+    class: 'beb-shimmer', 'pointer-events': 'none',
+  }));
+  // Surface top reflection
+  g.appendChild(el('rect', {
+    x: iX, y: iY, width: iW, height: iH * .32,
+    fill: '#c8ecff', 'fill-opacity': '.45', rx: '.03',
+    'pointer-events': 'none',
+  }));
+
+  // Beer can tops (2 rows, spaced proportionally)
+  const canR  = Math.min(.042, iH * .32);
+  const nCans = Math.max(4, Math.round(iW / .2));
+  const canSp = iW / nCans;
+  for (let i = 0; i < nCans; i++) {
+    const cx    = iX + (i + .5) * canSp;
+    const dly   = ((i * .17) % 4).toFixed(2);
+    for (const ry of [.28, .72]) {
+      const cy = iY + ry * iH;
+      // Can body (aluminum top view)
+      g.appendChild(el('circle', {
+        cx, cy, r: canR,
+        fill: '#c8a830', stroke: '#907018', 'stroke-width': '.01',
+        'fill-opacity': '.9', 'pointer-events': 'none',
+        class: 'beb-can', style: `animation-delay:${dly}s`,
+      }));
+      // Can ring/tab
+      g.appendChild(el('circle', {
+        cx, cy: cy - canR * .22, r: canR * .32,
+        fill: '#a09050', 'pointer-events': 'none',
+      }));
+    }
+  }
+
+  // Section dividers (trough has 3 compartments)
+  for (let d = 1; d <= 2; d++) {
+    g.appendChild(el('rect', {
+      x: item.w * (d / 3) - .025, y: 0,
+      width: .05, height: item.h,
+      fill: '#2c1a08', 'pointer-events': 'none',
+    }));
+  }
+
+  // Ice crystal sparkles
+  const sparks = [
+    [.06,.45],[.17,.22],[.28,.78],[.39,.38],[.5,.62],
+    [.61,.28],[.72,.72],[.83,.42],[.94,.58],
+  ];
+  for (const [fx, fy] of sparks) {
+    const delay = ((fx * 4.1 + fy * 2.3) % 3.2).toFixed(2);
+    // 4-point star sparkle (cross of two small rects)
+    const cx = iX + fx * iW;
+    const cy = iY + fy * iH;
+    g.appendChild(el('line', {
+      x1: cx - .045, y1: cy, x2: cx + .045, y2: cy,
+      stroke: '#fff', 'stroke-width': '.022',
       'pointer-events': 'none',
+      class: 'beb-sparkle', style: `animation-delay:${delay}s`,
+    }));
+    g.appendChild(el('line', {
+      x1: cx, y1: cy - .045, x2: cx, y2: cy + .045,
+      stroke: '#fff', 'stroke-width': '.022',
+      'pointer-events': 'none',
+      class: 'beb-sparkle', style: `animation-delay:${delay}s`,
+    }));
+    // Diagonal arms (for 8-point star effect)
+    g.appendChild(el('line', {
+      x1: cx - .028, y1: cy - .028, x2: cx + .028, y2: cy + .028,
+      stroke: '#c8eeff', 'stroke-width': '.013',
+      'pointer-events': 'none',
+      class: 'beb-sparkle', style: `animation-delay:${delay}s`,
+    }));
+    g.appendChild(el('line', {
+      x1: cx + .028, y1: cy - .028, x2: cx - .028, y2: cy + .028,
+      stroke: '#c8eeff', 'stroke-width': '.013',
+      'pointer-events': 'none',
+      class: 'beb-sparkle', style: `animation-delay:${delay}s`,
+    }));
+  }
+
+  // Cold glow filter on the inner area
+  g.appendChild(el('rect', {
+    x: iX, y: iY, width: iW, height: iH,
+    fill: 'none', rx: '.03',
+    filter: 'url(#filter-cold)',
+    'pointer-events': 'none',
+  }));
+
+  // Label (below trough)
+  const lblEl = el('text', {
+    x: item.w / 2, y: item.h + .36,
+    'text-anchor': 'middle', 'font-size': '.38',
+    fill: '#4aacdc', 'font-family': 'Courier New',
+    'fill-opacity': '.9', 'pointer-events': 'none',
+  });
+  lblEl.textContent = item.label;
+  g.appendChild(lblEl);
+
+  const dimEl = el('text', {
+    x: item.w / 2, y: item.h + .62,
+    'text-anchor': 'middle', 'font-size': '.29',
+    fill: '#4aacdc', 'font-family': 'Courier New',
+    'fill-opacity': '.5', 'pointer-events': 'none',
+  });
+  dimEl.textContent = `${item.w} × ${item.h} m · cervezas & hielo`;
+  g.appendChild(dimEl);
+
+  // Selection highlight
+  if (sel) {
+    g.appendChild(el('rect', {
+      x: -.14, y: -.14, width: item.w + .28, height: item.h + .28,
+      fill: 'none', stroke: '#fff', 'stroke-width': '.1',
+      rx: '.1', 'stroke-dasharray': '.32,.2', 'pointer-events': 'none',
     }));
     for (const [cx, cy] of [[0,0],[item.w,0],[0,item.h],[item.w,item.h]]) {
       g.appendChild(el('rect', {
@@ -666,26 +850,32 @@ function drawLedStrip(g, item, sel) {
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────
+function itemSubLabel(it) {
+  if (it.type === 'bombita')  return `${it.w} m · tira LED`;
+  if (it.type === 'bebedero') return `${it.w} × ${it.h} m · bebedero`;
+  return `${it.w} × ${it.h} m`;
+}
+
+function itemDimsLabel(item) {
+  if (item.type === 'bombita')  return `${item.w} m · tira LED · ${item.rot}°`;
+  if (item.type === 'bebedero') return `${item.w} × ${item.h} m · bebedero · ${item.rot}°`;
+  return `${item.w} × ${item.h} m  ·  ${item.rot}°`;
+}
+
 function renderSidebar() {
   const item = S.items.find(i => i.id === S.selId);
 
-  // Selected panel
   const panel = document.getElementById('sel-panel');
   if (item) {
     panel.classList.add('visible');
     document.getElementById('sel-name').textContent = item.label;
-    document.getElementById('sel-dims').textContent =
-      item.type === 'bombita'
-        ? `${item.w} m · tira LED · ${item.rot}°`
-        : `${item.w} × ${item.h} m  ·  ${item.rot}°`;
+    document.getElementById('sel-dims').textContent = itemDimsLabel(item);
   } else {
     panel.classList.remove('visible');
   }
 
-  // Count
   document.getElementById('item-count').textContent = S.items.length;
 
-  // List
   const listEl = document.getElementById('item-list');
   if (S.items.length === 0) {
     listEl.innerHTML = '<div class="empty">Sin ítems todavía</div>';
@@ -699,14 +889,13 @@ function renderSidebar() {
         <div class="item-dot" style="background:${cfg.color}"></div>
         <div class="item-text">
           <div class="item-lbl">${it.label}</div>
-          <div class="item-sub">${it.type === 'bombita' ? it.w + ' m · tira LED' : it.w + ' × ' + it.h + ' m'}</div>
+          <div class="item-sub">${itemSubLabel(it)}</div>
         </div>`;
       row.onclick = () => { S.selId = it.id; render(); };
       listEl.appendChild(row);
     }
   }
 
-  // Stats
   const counts = {};
   for (const it of S.items) counts[it.type] = (counts[it.type] || 0) + 1;
   const statsEl = document.getElementById('stats');
@@ -742,7 +931,6 @@ function moveDrag(clientX, clientY) {
   if (!item) return;
   item.x = +( pt.x - drag.offX ).toFixed(2);
   item.y = +( pt.y - drag.offY ).toFixed(2);
-  // Fast path: only update position, skip full re-render
   const g = layer.querySelector(`[data-id="${drag.id}"]`);
   if (g) g.setAttribute('transform', `translate(${item.x},${item.y})`);
 }
@@ -753,7 +941,6 @@ function endDrag() {
 
 document.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
 document.addEventListener('mouseup',   endDrag);
-
 document.addEventListener('touchmove', e => {
   if (!drag) return;
   e.preventDefault();
@@ -761,12 +948,8 @@ document.addEventListener('touchmove', e => {
 }, { passive: false });
 document.addEventListener('touchend', endDrag);
 
-// Click on SVG background → deselect
 svgEl.addEventListener('mousedown', e => {
-  if (!e.target.closest('[data-id]')) {
-    S.selId = null;
-    render();
-  }
+  if (!e.target.closest('[data-id]')) { S.selId = null; render(); }
 });
 
 // ─── KEYBOARD ─────────────────────────────────────────────
@@ -774,7 +957,6 @@ document.addEventListener('keydown', e => {
   if (!S.selId) return;
   const tag = document.activeElement?.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-
   if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); del(); }
   else if (e.key === 'r' || e.key === 'R') rotate(e.shiftKey ? -15 : 15);
   else if (e.key === 'd' || e.key === 'D') dup();
@@ -783,15 +965,15 @@ document.addEventListener('keydown', e => {
 
 // ─── ACTIONS ──────────────────────────────────────────────
 function addItem() {
-  const type  = document.getElementById('i-type').value;
+  const type   = document.getElementById('i-type').value;
   const rawLbl = document.getElementById('i-label').value.trim();
-  const label = rawLbl || TYPES[type].label + ' ' + S.nextId;
+  const label  = rawLbl || TYPES[type].label + ' ' + S.nextId;
   const w = parseFloat(document.getElementById('i-w').value) || 2;
   const h = parseFloat(document.getElementById('i-h').value) || 2;
 
   const item = {
     id: S.nextId++, type, label, w, h,
-    x: +(27 - w / 2).toFixed(2),   // center of full map
+    x: +(27 - w / 2).toFixed(2),
     y: +(22 - h / 2).toFixed(2),
     rot: 0,
   };
@@ -847,6 +1029,9 @@ document.getElementById('i-type').addEventListener('change', e => {
     (TYPES[e.target.value]?.label || '') + ' 1';
   if (e.target.value === 'bombita') {
     document.getElementById('i-w').value = 10;
+    document.getElementById('i-h').value = 0.6;
+  } else if (e.target.value === 'bebedero') {
+    document.getElementById('i-w').value = 7;
     document.getElementById('i-h').value = 0.6;
   }
 });
