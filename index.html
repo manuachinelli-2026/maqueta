@@ -178,6 +178,14 @@ select:focus, input:focus { border-color: #9a7a50; }
 .led-bulb { animation: led-twinkle 2.2s ease-in-out infinite; }
 .led-glow { animation: led-twinkle 2.2s ease-in-out infinite; }
 
+/* ── NIGHT MODE ── */
+#night-rect { pointer-events: none; opacity: 0; transition: opacity .7s ease; }
+body.night  #night-rect { opacity: 1; }
+.led-bloom  { opacity: .07; transition: opacity .7s ease; }
+body.night  .led-bloom  { opacity: .55; }
+.btn-night  { background: #12122a; color: #7070b8; border: 1px solid #28285a; width: 100%; }
+body.night  .btn-night  { background: #1e1e48; color: #a0a0e0; border-color: #4848a0; }
+
 /* ── BEBEDERO ── */
 @keyframes beb-shimmer {
   0%, 100% { opacity: .45; }
@@ -240,14 +248,44 @@ select:focus, input:focus { border-color: #9a7a50; }
         <filter id="filter-item-shadow" x="-10%" y="-10%" width="120%" height="120%">
           <feDropShadow dx=".06" dy=".08" stdDeviation=".06" flood-color="#000" flood-opacity=".4"/>
         </filter>
+
+        <!-- Grass texture filters -->
+        <filter id="filter-grass-1" filterUnits="userSpaceOnUse" x="0" y="0" width="54" height="44">
+          <feTurbulence type="fractalNoise" baseFrequency="0.13 0.08" numOctaves="4" seed="17" result="n"/>
+          <feColorMatrix in="n" type="luminanceToAlpha" result="a"/>
+          <feComposite in="SourceGraphic" in2="a" operator="in"/>
+        </filter>
+        <filter id="filter-grass-2" filterUnits="userSpaceOnUse" x="0" y="0" width="54" height="44">
+          <feTurbulence type="fractalNoise" baseFrequency="0.52 0.62" numOctaves="2" seed="31" result="n"/>
+          <feColorMatrix in="n" type="luminanceToAlpha" result="a"/>
+          <feComposite in="SourceGraphic" in2="a" operator="in"/>
+        </filter>
+        <filter id="filter-grass-3" filterUnits="userSpaceOnUse" x="0" y="0" width="54" height="44">
+          <feTurbulence type="fractalNoise" baseFrequency="0.06 0.04" numOctaves="2" seed="5" result="n"/>
+          <feColorMatrix in="n" type="luminanceToAlpha" result="a"/>
+          <feComposite in="SourceGraphic" in2="a" operator="in"/>
+        </filter>
+
+        <!-- LED / bebedero light bloom -->
+        <filter id="filter-led-bloom" x="-30%" y="-250%" width="160%" height="600%">
+          <feGaussianBlur stdDeviation=".65"/>
+        </filter>
       </defs>
 
       <!-- ── BACKGROUNDS ── -->
       <rect x="-2" y="-2" width="58" height="48" fill="#161616"/>
-      <rect x="0" y="0" width="54" height="44" fill="#e8e2d4"/>
+
+      <!-- ── PASTO ── dark base -->
+      <rect x="0" y="0" width="54" height="44" fill="#365f14"/>
+      <!-- medium green patches (grandes variaciones naturales) -->
+      <rect x="0" y="0" width="54" height="44" fill="#4e8220" filter="url(#filter-grass-1)" opacity=".9"/>
+      <!-- bright highlights (detalle fino de pasto) -->
+      <rect x="0" y="0" width="54" height="44" fill="#72a82c" filter="url(#filter-grass-2)" opacity=".38"/>
+      <!-- dry / yellow-green patches (pasto de campo seco) -->
+      <rect x="0" y="0" width="54" height="44" fill="#8a9020" filter="url(#filter-grass-3)" opacity=".18"/>
 
       <!-- ── A1: HILERA ÁRBOLES NORTE ── -->
-      <rect x="0" y="0" width="27" height="4" fill="#aac090" opacity=".65"/>
+      <rect x="0" y="0" width="27" height="4" fill="#6a9440" opacity=".75"/>
       <text x="13.5" y="2.5" text-anchor="middle"
             font-size=".85" fill="#4a6a30" font-family="Courier New"
             letter-spacing=".05em">HILERA DE ÁRBOLES · 4 M</text>
@@ -383,6 +421,9 @@ select:focus, input:focus { border-color: #9a7a50; }
               font-size=".6" fill="#555" font-family="Courier New">10 m</text>
       </g>
 
+      <!-- ── NOCHE: overlay oscuro (se activa con el botón) ── -->
+      <rect id="night-rect" x="-2" y="-2" width="58" height="48" fill="#030c18"/>
+
       <!-- ── CAPA DE ÍTEMS ── -->
       <g id="items-layer"></g>
 
@@ -454,6 +495,11 @@ select:focus, input:focus { border-color: #9a7a50; }
       <div class="stats" id="stats">
         <div class="empty" style="grid-column:1/-1">—</div>
       </div>
+    </div>
+
+    <!-- NIGHT -->
+    <div class="s-section">
+      <button class="btn btn-night" id="btn-night">☾ &nbsp;Bajar luz</button>
     </div>
 
     <!-- CLEAR -->
@@ -619,6 +665,16 @@ function drawLedStrip(g, item, sel) {
   const cableY  = item.h * .5;
   const bulbR   = Math.min(.22, item.h * .4);
 
+  // Warm light bloom (más visible en modo noche)
+  g.appendChild(el('ellipse', {
+    cx: item.w / 2, cy: cableY,
+    rx: item.w / 2 + .9, ry: 1.6,
+    fill: '#ffd060',
+    filter: 'url(#filter-led-bloom)',
+    'pointer-events': 'none',
+    class: 'led-bloom',
+  }));
+
   // PCB strip base (dark bar)
   g.appendChild(el('rect', {
     x: 0, y: cableY - bulbR * .55, width: item.w, height: bulbR * 1.1,
@@ -697,6 +753,16 @@ function drawBebedero(g, item, sel) {
   const iX  = brd, iY = brd;
   const iW  = item.w - brd * 2;
   const iH  = item.h - brd * 2;
+
+  // Cold light bloom (más visible en modo noche)
+  g.appendChild(el('ellipse', {
+    cx: item.w / 2, cy: item.h * .5,
+    rx: item.w / 2 + .55, ry: .95,
+    fill: '#48c0ff',
+    filter: 'url(#filter-led-bloom)',
+    'pointer-events': 'none',
+    class: 'led-bloom',
+  }));
 
   // Drop shadow
   g.appendChild(el('rect', {
@@ -1047,6 +1113,15 @@ document.getElementById('i-type').addEventListener('change', e => {
     document.getElementById('i-h').value = 0.6;
   }
 });
+
+// ─── NIGHT MODE ───────────────────────────────────────────
+let nightMode = false;
+document.getElementById('btn-night').onclick = () => {
+  nightMode = !nightMode;
+  document.body.classList.toggle('night', nightMode);
+  document.getElementById('btn-night').textContent =
+    nightMode ? '☀  Subir luz' : '☾  Bajar luz';
+};
 
 // ─── INIT ─────────────────────────────────────────────────
 load();
