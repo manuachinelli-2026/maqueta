@@ -702,6 +702,7 @@ body.night .night-bloom { opacity: .58; }
           <option value="barra">Barra de fardos</option>
           <option value="living">Living Gervasioni</option>
           <option value="sanitario">Baño VIP (6.5×4 m · 5 compartimentos)</option>
+          <option value="tractor">Tractor</option>
           <option value="texto">Texto / Referencia</option>
           <option value="otro">Otro</option>
         </select>
@@ -791,6 +792,7 @@ const TYPES = {
   livingf:   { label: 'Living Fardos',    color: '#bdb47e', fg: '#1a1000' },
   vela:      { label: 'Vela de piso',   color: '#f0a828', fg: '#1a0800' },
   sanitario: { label: 'Baño VIP',       color: '#d4a870', fg: '#1a0e00' },
+  tractor:   { label: 'Tractor',        color: '#c0392b', fg: '#fff0ee' },
   texto:     { label: 'Texto',          color: '#1a1a1a', fg: '#ffffff' },
   otro:      { label: 'Otro',          color: '#6a6a6a', fg: '#f0f0f0' },
 };
@@ -912,6 +914,8 @@ function buildItem(item, sel) {
     drawLivingFardos(inner, item, sel);
   } else if (item.type === 'sanitario') {
     drawSanitario(inner, item, sel);
+  } else if (item.type === 'tractor') {
+    drawTractor(inner, item, sel);
   } else {
     // Drop shadow
     inner.appendChild(el('rect', {
@@ -1680,6 +1684,228 @@ function drawLivingFardos(g, item, sel) {
   }
 }
 
+// ─── TRACTOR (vista superior) ─────────────────────────────
+function drawTractor(g, item, sel) {
+  const w = item.w, h = item.h;
+  const cx = w / 2, cy = h / 2;
+
+  // Proporciones: frente a la izquierda (x=0), trasera a la derecha (x=w)
+  const hoodW  = w * .38;    // largo del capó
+  const hoodH  = h * .42;    // ancho del capó (estrecho)
+  const cabW   = w * .32;    // largo de la cabina
+  const cabX   = hoodW;
+  const bodyW  = w * .62;    // largo del cuerpo trasero (desde cabina hacia atrás)
+  const bodyX  = hoodW;
+  // Ruedas traseras (grandes)
+  const rwR    = h * .28;    // radio rueda trasera
+  const rwCX   = w - rwR * 1.05;
+  // Ruedas delanteras (chicas)
+  const fwRx   = hoodH * .22, fwRy = hoodH * .32;
+  const fwCX   = hoodW * .48;
+
+  // ── SOMBRA ──
+  g.appendChild(el('ellipse', {
+    cx: cx + .1, cy: cy + .1, rx: w * .48, ry: h * .4,
+    fill: '#000', 'fill-opacity': '.28', 'pointer-events': 'none',
+  }));
+
+  // ── CHASIS / CUERPO TRASERO (rojo) ──
+  g.appendChild(el('rect', {
+    x: bodyX, y: cy - h * .3, width: bodyW, height: h * .6,
+    fill: '#b52a20', rx: '.1',
+  }));
+  // Reflejo sobre el cuerpo
+  g.appendChild(el('rect', {
+    x: bodyX + .06, y: cy - h * .28, width: bodyW * .55, height: h * .1,
+    fill: '#fff', 'fill-opacity': '.18', rx: '.05', 'pointer-events': 'none',
+  }));
+
+  // ── GUARDABARROS TRASEROS (bultos laterales sobre las ruedas grandes) ──
+  for (const fy of [cy - h * .34, cy + h * .34 - h * .14]) {
+    g.appendChild(el('ellipse', {
+      cx: rwCX, cy: fy + h * .07,
+      rx: rwR * 1.05, ry: h * .2,
+      fill: '#c0392b', stroke: '#8a1a12', 'stroke-width': '.03',
+    }));
+  }
+
+  // ── RUEDAS TRASERAS (grandes, negras) ──
+  for (const wy of [cy - rwR * .88, cy + rwR * .88]) {
+    // Neumático
+    g.appendChild(el('circle', {
+      cx: rwCX, cy: wy, r: rwR,
+      fill: '#181818', stroke: '#0a0a0a', 'stroke-width': '.03',
+    }));
+    // Llanta metálica
+    g.appendChild(el('circle', {
+      cx: rwCX, cy: wy, r: rwR * .55,
+      fill: '#585858', stroke: '#404040', 'stroke-width': '.025',
+    }));
+    // Rayos
+    for (let s = 0; s < 6; s++) {
+      const a = s * Math.PI / 3;
+      g.appendChild(el('line', {
+        x1: (rwCX + Math.cos(a) * rwR * .18).toFixed(3),
+        y1: (wy   + Math.sin(a) * rwR * .18).toFixed(3),
+        x2: (rwCX + Math.cos(a) * rwR * .5).toFixed(3),
+        y2: (wy   + Math.sin(a) * rwR * .5).toFixed(3),
+        stroke: '#404040', 'stroke-width': '.022', 'pointer-events': 'none',
+      }));
+    }
+    // Taco de neumático (líneas radiales)
+    for (let t = 0; t < 12; t++) {
+      const a = t * Math.PI / 6;
+      g.appendChild(el('line', {
+        x1: (rwCX + Math.cos(a) * rwR * .6).toFixed(3),
+        y1: (wy   + Math.sin(a) * rwR * .6).toFixed(3),
+        x2: (rwCX + Math.cos(a) * rwR * .96).toFixed(3),
+        y2: (wy   + Math.sin(a) * rwR * .96).toFixed(3),
+        stroke: '#2a2a2a', 'stroke-width': '.018', 'pointer-events': 'none',
+      }));
+    }
+    // Centro (cubo)
+    g.appendChild(el('circle', {
+      cx: rwCX, cy: wy, r: rwR * .14,
+      fill: '#909090', 'pointer-events': 'none',
+    }));
+  }
+
+  // ── CAPÓ (rojo, estrecho) ──
+  g.appendChild(el('rect', {
+    x: 0, y: cy - hoodH / 2, width: hoodW, height: hoodH,
+    fill: '#c0392b', rx: '.1',
+  }));
+  // Rejilla del capó (líneas horizontales)
+  const nSlots = 5;
+  for (let s = 1; s < nSlots; s++) {
+    const gy = cy - hoodH / 2 + hoodH * s / nSlots;
+    g.appendChild(el('line', {
+      x1: hoodW * .12, y1: gy, x2: hoodW * .82, y2: gy,
+      stroke: '#8a1a12', 'stroke-width': '.02', 'pointer-events': 'none',
+    }));
+  }
+  // Brillo capó
+  g.appendChild(el('rect', {
+    x: hoodW * .08, y: cy - hoodH * .42,
+    width: hoodW * .55, height: hoodH * .14,
+    fill: '#fff', 'fill-opacity': '.2', rx: '.04', 'pointer-events': 'none',
+  }));
+  // Farol delantero (círculo amarillo)
+  g.appendChild(el('circle', {
+    cx: hoodW * .06, cy: cy,
+    r: hoodH * .14,
+    fill: '#f8e040', stroke: '#c8a010', 'stroke-width': '.02',
+  }));
+  g.appendChild(el('circle', {
+    cx: hoodW * .06, cy: cy, r: hoodH * .07,
+    fill: '#fff8c0', 'pointer-events': 'none',
+  }));
+  // Caño de escape (tubo pequeño sobre el capó)
+  g.appendChild(el('ellipse', {
+    cx: hoodW * .55, cy: cy - hoodH * .36,
+    rx: hoodW * .04, ry: hoodW * .025,
+    fill: '#2a2a2a', stroke: '#111', 'stroke-width': '.015',
+  }));
+  // Humo del escape (pequeños círculos difusos)
+  for (let s = 0; s < 3; s++) {
+    g.appendChild(el('circle', {
+      cx: hoodW * .55, cy: cy - hoodH * .36 - hoodH * .1 * (s + 1),
+      r: hoodW * (.03 + s * .018),
+      fill: '#888', 'fill-opacity': `${.25 - s * .07}`,
+      'pointer-events': 'none',
+    }));
+  }
+
+  // ── CABINA (vidrio + estructura) ──
+  // Marco de cabina
+  g.appendChild(el('rect', {
+    x: cabX, y: cy - h * .26, width: cabW, height: h * .52,
+    fill: '#8a1a12', rx: '.06',
+  }));
+  // Vidrio (interior más claro, azulado)
+  g.appendChild(el('rect', {
+    x: cabX + .06, y: cy - h * .21, width: cabW - .12, height: h * .42,
+    fill: '#4a6a88', 'fill-opacity': '.72', rx: '.04',
+  }));
+  // Reflejo en vidrio
+  g.appendChild(el('rect', {
+    x: cabX + .08, y: cy - h * .20, width: cabW * .38, height: h * .13,
+    fill: '#c0d8f0', 'fill-opacity': '.55', rx: '.03', 'pointer-events': 'none',
+  }));
+  // Pilares de la cabina (A y B)
+  for (const px of [cabX, cabX + cabW - .07]) {
+    g.appendChild(el('rect', {
+      x: px, y: cy - h * .26, width: .07, height: h * .52,
+      fill: '#6a1008', 'pointer-events': 'none',
+    }));
+  }
+
+  // ── RUEDAS DELANTERAS (pequeñas) ──
+  for (const wy of [cy - hoodH * .56, cy + hoodH * .56]) {
+    // Neumático
+    g.appendChild(el('ellipse', {
+      cx: fwCX, cy: wy, rx: fwRx, ry: fwRy,
+      fill: '#181818', stroke: '#0a0a0a', 'stroke-width': '.02',
+    }));
+    // Llanta
+    g.appendChild(el('ellipse', {
+      cx: fwCX, cy: wy, rx: fwRx * .5, ry: fwRy * .5,
+      fill: '#585858', 'pointer-events': 'none',
+    }));
+  }
+
+  // ── ENGANCHE TRASERO (tres puntos) ──
+  const hkX = w - .06;
+  g.appendChild(el('rect', {
+    x: hkX, y: cy - .06, width: .1, height: .12,
+    fill: '#383828', rx: '.03',
+  }));
+  for (const hy of [cy - h * .22, cy + h * .22]) {
+    g.appendChild(el('circle', {
+      cx: hkX + .05, cy: hy, r: .06,
+      fill: '#484838', stroke: '#282818', 'stroke-width': '.015',
+    }));
+  }
+
+  // ── LABEL ──
+  const lbl = el('text', {
+    x: cx, y: h + .38,
+    'text-anchor': 'middle', 'font-size': '.38',
+    fill: '#c0392b', 'font-family': 'Courier New',
+    'fill-opacity': '.92', 'pointer-events': 'none',
+  });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+  const dim = el('text', {
+    x: cx, y: h + .62,
+    'text-anchor': 'middle', 'font-size': '.28',
+    fill: '#c0392b', 'font-family': 'Courier New',
+    'fill-opacity': '.5', 'pointer-events': 'none',
+  });
+  dim.textContent = `${w} × ${h} m`;
+  g.appendChild(dim);
+
+  // Hit area
+  g.appendChild(el('rect', {
+    x: 0, y: 0, width: w, height: h,
+    fill: 'none', 'pointer-events': 'all',
+  }));
+
+  if (sel) {
+    g.appendChild(el('rect', {
+      x: -.12, y: -.12, width: w + .24, height: h + .24,
+      fill: 'none', stroke: '#fff', 'stroke-width': '.1',
+      rx: '.1', 'stroke-dasharray': '.32,.2', 'pointer-events': 'none',
+    }));
+    for (const [hx, hy] of [[0,0],[w,0],[0,h],[w,h]])
+      g.appendChild(el('rect', {
+        x: hx-.22, y: hy-.22, width: .44, height: .44,
+        fill: '#fff', stroke: '#4a4a4a', 'stroke-width': '.06',
+        rx: '.08', 'pointer-events': 'none',
+      }));
+  }
+}
+
 // ─── BAÑO VIP · Módulo Sanitario 5 compartimentos ─────────
 function drawSanitario(g, item, sel) {
   const w = item.w, h = item.h;
@@ -2250,6 +2476,7 @@ function itemSubLabel(it) {
   if (it.type === 'vela')      return `vela · ${it.w} m`;
   if (it.type === 'livingf')   return `${it.w} × ${it.h} m · fardos`;
   if (it.type === 'sanitario') return `6.5 × 4 m · Baño VIP`;
+  if (it.type === 'tractor')   return `${it.w} × ${it.h} m · tractor`;
   if (it.type === 'texto')     return `etiqueta`;
   return `${it.w} × ${it.h} m`;
 }
@@ -2528,6 +2755,9 @@ document.getElementById('i-type').addEventListener('change', e => {
   } else if (e.target.value === 'sanitario') {
     document.getElementById('i-w').value = 4.5;
     document.getElementById('i-h').value = 2.5;
+  } else if (e.target.value === 'tractor') {
+    document.getElementById('i-w').value = 3.5;
+    document.getElementById('i-h').value = 2;
   } else if (e.target.value === 'texto') {
     document.getElementById('i-w').value = 3;
     document.getElementById('i-h').value = 0.5;
