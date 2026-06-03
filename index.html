@@ -701,6 +701,7 @@ body.night .night-bloom { opacity: .58; }
           <option value="livingf">Living Fardos</option>
           <option value="barra">Barra de fardos</option>
           <option value="living">Living Gervasioni</option>
+          <option value="sanitario">Baño VIP (6.5×4 m · 5 compartimentos)</option>
           <option value="texto">Texto / Referencia</option>
           <option value="otro">Otro</option>
         </select>
@@ -789,6 +790,7 @@ const TYPES = {
   living:    { label: 'Living Gervasioni', color: '#c0906c', fg: '#1a0c00' },
   livingf:   { label: 'Living Fardos',    color: '#bdb47e', fg: '#1a1000' },
   vela:      { label: 'Vela de piso',   color: '#f0a828', fg: '#1a0800' },
+  sanitario: { label: 'Baño VIP',       color: '#d4a870', fg: '#1a0e00' },
   texto:     { label: 'Texto',          color: '#1a1a1a', fg: '#ffffff' },
   otro:      { label: 'Otro',          color: '#6a6a6a', fg: '#f0f0f0' },
 };
@@ -908,6 +910,8 @@ function buildItem(item, sel) {
     drawVela(inner, item, sel);
   } else if (item.type === 'livingf') {
     drawLivingFardos(inner, item, sel);
+  } else if (item.type === 'sanitario') {
+    drawSanitario(inner, item, sel);
   } else {
     // Drop shadow
     inner.appendChild(el('rect', {
@@ -1487,6 +1491,7 @@ function rebuildLightLayer() {
     else if (item.type === 'reflector') { fill='#fffce0'; r=Math.max(item.w,item.h)*4.5; }
     else if (item.type === 'bebedero')  { fill='#40b0ff'; r=item.w/2+1.0; }
     else if (item.type === 'pista' && item.lightsOn) { fill='#ffe0a0'; r=Math.max(item.w,item.h)*.8; }
+    else if (item.type === 'sanitario') { fill='#ffc040'; r=item.w/2*.55; }
     else if (item.type === 'cuina')     { fill='#ff8820'; r=item.w/2*.9; }
     else if (item.type === 'vela')      { fill='#ff9010'; r=Math.min(item.w,item.h)*3.5; }
     if (!fill) continue;
@@ -1672,6 +1677,294 @@ function drawLivingFardos(g, item, sel) {
     g.appendChild(el('rect', { x:-.12, y:-.12, width:w+.24, height:h+.24, fill:'none', stroke:'#fff', 'stroke-width':'.1', rx:'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
     for (const [hx,hy] of [[0,0],[w,0],[0,h],[w,h]])
       g.appendChild(el('rect', { x:hx-.22, y:hy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
+// ─── BAÑO VIP · Módulo Sanitario 5 compartimentos ─────────
+// Medidas: Largo 4.5m (habitáculo) + 2m (lanza) · Ancho 2.5m + 1.5m (escaleras) · Alto 3.1m
+// Superficie total: 6.5 × 4 m
+function drawSanitario(g, item, sel) {
+  const w = item.w, h = item.h;
+
+  // Proporciones según plano técnico del PDF:
+  //   Lanza: 2/6.5 del ancho total
+  //   Habitáculo: 4.5/6.5 del ancho total
+  //   Alto habitáculo: 2.5/4 del alto total
+  //   Escaleras: 1.5/4 del alto total (cuelgan hacia abajo)
+  const lanzaW  = w * (2   / 6.5);
+  const bodyW   = w * (4.5 / 6.5);
+  const bodyH   = h * (2.5 / 4);
+  const bodyX   = lanzaW;
+  const bodyY   = 0;
+  const stairsH = h * (1.5 / 4);
+  const stairsY = bodyH;
+  const compW   = bodyW / 5;
+
+  // ── SOMBRA GENERAL ──
+  g.appendChild(el('rect', {
+    x: .07, y: .09, width: w, height: h,
+    fill: '#000', 'fill-opacity': '.28', rx: '.12', 'pointer-events': 'none',
+  }));
+
+  // ── LANZA (enganche del trailer) ──
+  const lanzaThick = bodyH * .16;
+  const lanzaY     = bodyH / 2 - lanzaThick / 2;
+  // Cuerpo de la lanza
+  g.appendChild(el('rect', {
+    x: 0, y: lanzaY, width: lanzaW + .04, height: lanzaThick,
+    fill: '#484848', stroke: '#2a2a2a', 'stroke-width': '.03', rx: '.04',
+  }));
+  g.appendChild(el('rect', {
+    x: .04, y: lanzaY + .02, width: lanzaW - .06, height: lanzaThick * .32,
+    fill: '#707070', 'fill-opacity': '.55', rx: '.03', 'pointer-events': 'none',
+  }));
+  // Gancho (enganche esférico)
+  g.appendChild(el('circle', {
+    cx: .14, cy: bodyH / 2, r: lanzaThick * .44,
+    fill: '#303030', stroke: '#1a1a1a', 'stroke-width': '.025',
+  }));
+  g.appendChild(el('circle', {
+    cx: .14, cy: bodyH / 2, r: lanzaThick * .18,
+    fill: '#606060', 'pointer-events': 'none',
+  }));
+
+  // ── CUERPO PRINCIPAL DEL HABITÁCULO ──
+  // Base oscura (borde grueso charcoal)
+  g.appendChild(el('rect', {
+    x: bodyX, y: bodyY, width: bodyW, height: bodyH,
+    fill: '#2e2e2e', rx: '.08',
+  }));
+  // Superficie blanca principal
+  g.appendChild(el('rect', {
+    x: bodyX + .05, y: bodyY + .05, width: bodyW - .1, height: bodyH - .1,
+    fill: '#f2f0ec', stroke: '#3a3a3a', 'stroke-width': '.055', rx: '.06',
+  }));
+  // Reflejo/brillo superior
+  g.appendChild(el('rect', {
+    x: bodyX + .09, y: bodyY + .07, width: bodyW - .18, height: bodyH * .16,
+    fill: '#fff', 'fill-opacity': '.48', rx: '.04', 'pointer-events': 'none',
+  }));
+  // Trim de esquinas (chaflán charcoal oscuro)
+  const tW = bodyW * .055, tH = bodyH * .11;
+  for (const [tx, ty] of [
+    [bodyX + .05, bodyY + .05],
+    [bodyX + bodyW - .05 - tW, bodyY + .05],
+    [bodyX + .05, bodyY + bodyH - .05 - tH],
+    [bodyX + bodyW - .05 - tW, bodyY + bodyH - .05 - tH],
+  ]) {
+    g.appendChild(el('rect', {
+      x: tx, y: ty, width: tW, height: tH,
+      fill: '#2e2e2e', rx: '.025', 'pointer-events': 'none',
+    }));
+  }
+
+  // ── DIVISORES DE COMPARTIMENTOS (5 espacios) ──
+  for (let i = 1; i < 5; i++) {
+    const dx = bodyX + .05 + (bodyW - .1) * i / 5;
+    g.appendChild(el('line', {
+      x1: dx, y1: bodyY + .05, x2: dx, y2: bodyY + bodyH - .05,
+      stroke: '#4a4a4a', 'stroke-width': '.045', 'pointer-events': 'none',
+    }));
+  }
+
+  // ── PUERTAS (arcos de apertura) ──
+  for (let i = 0; i < 5; i++) {
+    const doorCx = bodyX + .05 + compW * i;
+    const doorCy = bodyY + bodyH - .08;
+    const doorR  = Math.min(compW * .55, bodyH * .32);
+    // Arco de puerta (indica apertura)
+    g.appendChild(el('path', {
+      d: `M ${doorCx} ${doorCy} A ${doorR} ${doorR} 0 0 1 ${doorCx + doorR} ${doorCy - doorR}`,
+      fill: 'none', stroke: '#999', 'stroke-width': '.018',
+      'pointer-events': 'none',
+    }));
+    // Línea de la puerta
+    g.appendChild(el('line', {
+      x1: doorCx, y1: doorCy - doorR,
+      x2: doorCx, y2: doorCy,
+      stroke: '#999', 'stroke-width': '.018', 'pointer-events': 'none',
+    }));
+  }
+
+  // ── ÍCONOS DE GÉNERO ──
+  // Compartimentos 0,1,2 → Damas; 3,4 → Caballeros
+  const iconY  = bodyY + bodyH * .4;
+  const iconFs = Math.min(compW * .55, bodyH * .25);
+  for (let i = 0; i < 5; i++) {
+    const icx  = bodyX + .05 + compW * (i + .5);
+    const isFemale = i < 3;
+    // Cabeza
+    g.appendChild(el('circle', {
+      cx: icx, cy: iconY - iconFs * .48, r: iconFs * .16,
+      fill: '#333', 'pointer-events': 'none',
+    }));
+    if (isFemale) {
+      // Falda (triángulo)
+      g.appendChild(el('polygon', {
+        points: `${icx},${iconY - iconFs * .3} ${icx - iconFs * .22},${iconY + iconFs * .28} ${icx + iconFs * .22},${iconY + iconFs * .28}`,
+        fill: '#333', 'pointer-events': 'none',
+      }));
+    } else {
+      // Cuerpo rectangular (masculino)
+      g.appendChild(el('rect', {
+        x: icx - iconFs * .16, y: iconY - iconFs * .3,
+        width: iconFs * .32, height: iconFs * .5,
+        fill: '#333', rx: '.02', 'pointer-events': 'none',
+      }));
+    }
+  }
+
+  // ── TEXTO "BAÑOS VIP" ──
+  const bvTxt = el('text', {
+    x: bodyX + bodyW / 2, y: bodyY + bodyH * .82,
+    'text-anchor': 'middle', 'font-size': (bodyH * .085).toFixed(3),
+    fill: '#555', 'font-family': 'Courier New',
+    'fill-opacity': '.7', 'letter-spacing': '.06em',
+    'pointer-events': 'none',
+  });
+  bvTxt.textContent = '— BAÑOS VIP —';
+  g.appendChild(bvTxt);
+
+  // ── LUCES COLGANTES TIPO RATÁN (3 lámparas sobre el habitáculo) ──
+  const nLamps = 3;
+  for (let i = 0; i < nLamps; i++) {
+    const lx    = bodyX + bodyW * (i + 1) / (nLamps + 1);
+    const ly    = bodyY + bodyH * .24;
+    const lR    = Math.min(compW * .28, bodyH * .13);
+    const delay = `${(i * .38).toFixed(2)}s`;
+
+    // Glow cálido (visible en modo noche)
+    g.appendChild(el('circle', {
+      cx: lx, cy: ly, r: lR * 4.5,
+      fill: '#ffc040', 'fill-opacity': '1',
+      filter: 'url(#filter-led-bloom)',
+      'pointer-events': 'none',
+      class: 'led-strip-bloom',
+      style: `animation-delay:${delay}`,
+    }));
+    // Pantalla exterior ratán (marrón cálido)
+    g.appendChild(el('circle', {
+      cx: lx, cy: ly, r: lR,
+      fill: '#8a5a18', stroke: '#4a2e08', 'stroke-width': '.025',
+      'pointer-events': 'none',
+    }));
+    // Trama ratán (líneas radiales)
+    for (let r = 0; r < 8; r++) {
+      const angle = r * Math.PI / 4;
+      const r1 = lR * .3, r2 = lR * .9;
+      g.appendChild(el('line', {
+        x1: (lx + Math.cos(angle) * r1).toFixed(3),
+        y1: (ly + Math.sin(angle) * r1).toFixed(3),
+        x2: (lx + Math.cos(angle) * r2).toFixed(3),
+        y2: (ly + Math.sin(angle) * r2).toFixed(3),
+        stroke: '#5a3208', 'stroke-width': '.015',
+        'pointer-events': 'none',
+      }));
+    }
+    // Anillo interior de la pantalla
+    g.appendChild(el('circle', {
+      cx: lx, cy: ly, r: lR * .52,
+      fill: '#f0a820', 'fill-opacity': '.88',
+      filter: 'url(#filter-led)',
+      'pointer-events': 'none',
+      class: 'led-bulb',
+      style: `animation-delay:${delay}`,
+    }));
+    // Núcleo brillante
+    g.appendChild(el('circle', {
+      cx: lx, cy: ly, r: lR * .22,
+      fill: '#fff8d0', 'fill-opacity': '.95',
+      'pointer-events': 'none',
+    }));
+  }
+
+  // ── ESCALERAS (lateral, 3 peldaños) ──
+  const nSteps  = 3;
+  const stepH   = stairsH / nSteps;
+  const shadowC = ['#b8b8b4', '#c8c8c4', '#d8d8d4'];
+  for (let i = 0; i < nSteps; i++) {
+    const sY   = stairsY + i * stepH;
+    const sX   = bodyX + bodyW * (i * .05);
+    const sW   = bodyW * (1 - i * .05);
+    g.appendChild(el('rect', {
+      x: sX + .03, y: sY + .03, width: sW, height: stepH,
+      fill: '#000', 'fill-opacity': '.18', rx: '.03', 'pointer-events': 'none',
+    }));
+    g.appendChild(el('rect', {
+      x: sX, y: sY, width: sW, height: stepH,
+      fill: shadowC[i], stroke: '#909090', 'stroke-width': '.025', rx: '.03',
+    }));
+    // Borde de peldaño (antideslizante)
+    g.appendChild(el('line', {
+      x1: sX + .04, y1: sY + .03,
+      x2: sX + sW - .04, y2: sY + .03,
+      stroke: '#fff', 'stroke-width': '.022', 'stroke-opacity': '.6',
+      'pointer-events': 'none',
+    }));
+    // Pasamano central (línea a lo largo)
+    g.appendChild(el('line', {
+      x1: sX, y1: sY + stepH / 2,
+      x2: sX + sW, y2: sY + stepH / 2,
+      stroke: '#888', 'stroke-width': '.012', 'stroke-dasharray': '.06,.06',
+      'pointer-events': 'none',
+    }));
+  }
+
+  // ── RUEDAS DEL TRAILER (vista superior) ──
+  const whlR = bodyH * .065;
+  for (const wy of [bodyY + bodyH * .22, bodyY + bodyH * .70]) {
+    // Rueda (oval vista de arriba)
+    g.appendChild(el('ellipse', {
+      cx: bodyX + bodyW - whlR * .5, cy: wy,
+      rx: whlR * .42, ry: whlR,
+      fill: '#161616', stroke: '#2a2a2a', 'stroke-width': '.018',
+      'pointer-events': 'none',
+    }));
+    // Aro
+    g.appendChild(el('ellipse', {
+      cx: bodyX + bodyW - whlR * .5, cy: wy,
+      rx: whlR * .22, ry: whlR * .52,
+      fill: '#484848', 'pointer-events': 'none',
+    }));
+  }
+
+  // ── LABEL Y DIMENSIONES ──
+  const lbl = el('text', {
+    x: w / 2, y: h + .38,
+    'text-anchor': 'middle', 'font-size': '.38',
+    fill: '#d4a870', 'font-family': 'Courier New',
+    'fill-opacity': '.92', 'pointer-events': 'none',
+  });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+
+  const dim = el('text', {
+    x: w / 2, y: h + .62,
+    'text-anchor': 'middle', 'font-size': '.28',
+    fill: '#d4a870', 'font-family': 'Courier New',
+    'fill-opacity': '.52', 'pointer-events': 'none',
+  });
+  dim.textContent = `6.5 × 4 m · Baño VIP · hasta 200 pers`;
+  g.appendChild(dim);
+
+  // Hit area
+  g.appendChild(el('rect', {
+    x: 0, y: 0, width: w, height: h,
+    fill: 'none', 'pointer-events': 'all',
+  }));
+
+  if (sel) {
+    g.appendChild(el('rect', {
+      x: -.12, y: -.12, width: w + .24, height: h + .24,
+      fill: 'none', stroke: '#fff', 'stroke-width': '.1',
+      rx: '.1', 'stroke-dasharray': '.32,.2', 'pointer-events': 'none',
+    }));
+    for (const [hx, hy] of [[0,0],[w,0],[0,h],[w,h]])
+      g.appendChild(el('rect', {
+        x: hx-.22, y: hy-.22, width: .44, height: .44,
+        fill: '#fff', stroke: '#4a4a4a', 'stroke-width': '.06',
+        rx: '.08', 'pointer-events': 'none',
+      }));
   }
 }
 
@@ -2036,6 +2329,7 @@ function itemSubLabel(it) {
   if (it.type === 'mesaimp')   return `3 × 1 m · 8 pers`;
   if (it.type === 'vela')      return `vela · ${it.w} m`;
   if (it.type === 'livingf')   return `${it.w} × ${it.h} m · fardos`;
+  if (it.type === 'sanitario') return `6.5 × 4 m · Baño VIP`;
   if (it.type === 'texto')     return `etiqueta`;
   return `${it.w} × ${it.h} m`;
 }
@@ -2044,6 +2338,7 @@ function itemDimsLabel(item) {
   if (item.type === 'bombita')   return `${item.w} m · tira LED · ${item.rot}°`;
   if (item.type === 'bebedero')  return `${item.w} × ${item.h} m · bebedero · ${item.rot}°`;
   if (item.type === 'reflector') return `Ø ${item.w} m · reflector · ${item.rot}°`;
+  if (item.type === 'sanitario') return `6.5 × 4 m · Baño VIP · ${item.rot}°`;
   return `${item.w} × ${item.h} m  ·  ${item.rot}°`;
 }
 
@@ -2310,6 +2605,9 @@ document.getElementById('i-type').addEventListener('change', e => {
   } else if (e.target.value === 'vela') {
     document.getElementById('i-w').value = 0.3;
     document.getElementById('i-h').value = 0.3;
+  } else if (e.target.value === 'sanitario') {
+    document.getElementById('i-w').value = 6.5;
+    document.getElementById('i-h').value = 4;
   } else if (e.target.value === 'texto') {
     document.getElementById('i-w').value = 3;
     document.getElementById('i-h').value = 0.5;
