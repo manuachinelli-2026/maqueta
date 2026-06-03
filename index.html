@@ -115,6 +115,7 @@ select, input {
   width: 100%;
 }
 select:focus, input:focus { border-color: #9a7a50; }
+input:disabled { opacity: .38; cursor: not-allowed; }
 
 .frow { display: flex; gap: 6px; }
 .frow label { flex: 1; }
@@ -687,6 +688,7 @@ body.night .night-bloom { opacity: .58; }
       <label>Tipo
         <select id="i-type">
           <option value="mesa">Mesa</option>
+          <option value="mesaimp">Mesa Imperial (3×1 · 8p)</option>
           <option value="pista">Pista de baile</option>
           <option value="barra">Barra</option>
           <option value="comida">Sector comida</option>
@@ -774,6 +776,7 @@ body.night .night-bloom { opacity: .58; }
 // ─── CONFIG ───────────────────────────────────────────────
 const TYPES = {
   mesa:     { label: 'Mesa',           color: '#d4a853', fg: '#1a0e00' },
+  mesaimp:  { label: 'Mesa Imperial',  color: '#e8e4d8', fg: '#2a2418' },
   pista:    { label: 'Pista de baile', color: '#b87840', fg: '#1a0800' },
   barra:    { label: 'Barra',          color: '#8a5c35', fg: '#f0e8d8' },
   comida:   { label: 'Sector comida',  color: '#5a8a5a', fg: '#e0f0e0' },
@@ -883,7 +886,9 @@ function buildItem(item, sel) {
   });
   const inner = el('g', { transform: `rotate(${item.rot},${hw},${hh})` });
 
-  if (item.type === 'pista') {
+  if (item.type === 'mesaimp') {
+    drawMesaImp(inner, item, sel);
+  } else if (item.type === 'pista') {
     drawPista(inner, item, sel);
   } else if (item.type === 'bombita') {
     drawLedStrip(inner, item, sel);
@@ -1891,6 +1896,67 @@ function drawBarra(g, item, sel) {
   }
 }
 
+// ─── MESA IMPERIAL · 3×1 m · 8 personas (4+4, sin cabeceras) ──
+function drawMesaImp(g, item, sel) {
+  const W = 3.0, H = 1.0; // FIJAS siempre
+  const nC = 4;
+  const cW = .40, cH = .30;
+  const gap = .07;
+  const cFill = '#d4cec0', cBack = '#b8b2a4', cCush = '#e4ddd0';
+
+  // Sombra mesa
+  g.appendChild(el('rect', { x:.04, y:.05, width:W, height:H, fill:'#000', 'fill-opacity':'.18', rx:'.07', 'pointer-events':'none' }));
+  // Mantel blanco
+  g.appendChild(el('rect', { x:0, y:0, width:W, height:H, fill:'#f4f2ec', stroke:'#ccc8b8', 'stroke-width':'.03', rx:'.07' }));
+  // Borde interior (doble mantel)
+  g.appendChild(el('rect', { x:.055, y:.055, width:W-.11, height:H-.11, fill:'none', stroke:'#dddad0', 'stroke-width':'.018', rx:'.04', 'pointer-events':'none' }));
+
+  // Platos y copas (8 cubiertos: 4 norte + 4 sur)
+  for (let i = 0; i < nC; i++) {
+    const px = W * (i + 1) / (nC + 1);
+    for (const [py, gpY] of [[H*.22, H*.27],[H*.78, H*.73]]) {
+      g.appendChild(el('circle', { cx:px, cy:py, r:'.052', fill:'#eae6de', stroke:'#b0aca0', 'stroke-width':'.016', 'pointer-events':'none' }));
+      g.appendChild(el('circle', { cx:px+.09, cy:gpY, r:'.03', fill:'#cce4f2', 'fill-opacity':'.88', stroke:'#8ab8d0', 'stroke-width':'.012', 'pointer-events':'none' }));
+    }
+  }
+  // Centro de mesa (arreglo floral mínimo)
+  g.appendChild(el('ellipse', { cx:W/2, cy:H/2, rx:'.2', ry:'.12', fill:'#a0c070', 'fill-opacity':'.65', 'pointer-events':'none' }));
+  g.appendChild(el('circle', { cx:W/2, cy:H/2, r:'.065', fill:'#c06850', 'fill-opacity':'.75', 'pointer-events':'none' }));
+
+  // ── SILLAS NORTE ──
+  for (let i = 0; i < nC; i++) {
+    const cx = W * (i + 1) / (nC + 1);
+    const sy = -(gap + cH);
+    g.appendChild(el('rect', { x:cx-cW/2, y:sy, width:cW, height:cH, fill:cFill, stroke:'#9a9488', 'stroke-width':'.024', rx:'.055' }));
+    g.appendChild(el('rect', { x:cx-cW/2, y:sy-cH*.24, width:cW, height:cH*.24, fill:cBack, stroke:'#9a9488', 'stroke-width':'.02', rx:'.04' }));
+    g.appendChild(el('rect', { x:cx-cW/2+.03, y:sy+.03, width:cW-.06, height:cH*.72, fill:cCush, rx:'.04', 'pointer-events':'none' }));
+  }
+  // ── SILLAS SUR ──
+  for (let i = 0; i < nC; i++) {
+    const cx = W * (i + 1) / (nC + 1);
+    const sy = H + gap;
+    g.appendChild(el('rect', { x:cx-cW/2, y:sy, width:cW, height:cH, fill:cFill, stroke:'#9a9488', 'stroke-width':'.024', rx:'.055' }));
+    g.appendChild(el('rect', { x:cx-cW/2, y:sy+cH*.76, width:cW, height:cH*.24, fill:cBack, stroke:'#9a9488', 'stroke-width':'.02', rx:'.04' }));
+    g.appendChild(el('rect', { x:cx-cW/2+.03, y:sy+.03, width:cW-.06, height:cH*.72, fill:cCush, rx:'.04', 'pointer-events':'none' }));
+  }
+
+  // Label
+  const lbl = el('text', { x:W/2, y:H+gap+cH+.3, 'text-anchor':'middle', 'font-size':'.34', fill:'#b0a890', 'font-family':'Courier New', 'fill-opacity':'.85', 'pointer-events':'none' });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+  const dim = el('text', { x:W/2, y:H+gap+cH+.52, 'text-anchor':'middle', 'font-size':'.26', fill:'#b0a890', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
+  dim.textContent = `${W} × ${H} m · 8 pers`;
+  g.appendChild(dim);
+
+  // Hit area
+  g.appendChild(el('rect', { x:0, y:0, width:W, height:H, fill:'none', 'pointer-events':'all' }));
+  if (sel) {
+    g.appendChild(el('rect', { x:-.12, y:-.12, width:W+.24, height:H+.24, fill:'none', stroke:'#fff', 'stroke-width':'.1', rx:'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
+    for (const [hx,hy] of [[0,0],[W,0],[0,H],[W,H]])
+      g.appendChild(el('rect', { x:hx-.22, y:hy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
 // ─── LIVING GERVASIONI · 4 sofás enfrentados ──────────────
 function drawLiving(g, item, sel) {
   const w = item.w, h = item.h;
@@ -1967,6 +2033,7 @@ function itemSubLabel(it) {
   if (it.type === 'cuina')     return `${it.w} × ${it.h} m · catering`;
   if (it.type === 'barra')     return `${it.w} m · fardos`;
   if (it.type === 'living')    return `${it.w} × ${it.h} m · living`;
+  if (it.type === 'mesaimp')   return `3 × 1 m · 8 pers`;
   if (it.type === 'vela')      return `vela · ${it.w} m`;
   if (it.type === 'livingf')   return `${it.w} × ${it.h} m · fardos`;
   if (it.type === 'texto')     return `etiqueta`;
@@ -2225,6 +2292,9 @@ document.getElementById('i-type').addEventListener('change', e => {
   } else if (e.target.value === 'pista') {
     document.getElementById('i-w').value = 6;
     document.getElementById('i-h').value = 6;
+  } else if (e.target.value === 'mesaimp') {
+    document.getElementById('i-w').value = 3;
+    document.getElementById('i-h').value = 1;
   } else if (e.target.value === 'cuina') {
     document.getElementById('i-w').value = 8;
     document.getElementById('i-h').value = 8;
@@ -2245,6 +2315,10 @@ document.getElementById('i-type').addEventListener('change', e => {
     document.getElementById('i-h').value = 0.5;
     document.getElementById('i-label').placeholder = 'Escribe el texto aquí';
   }
+  // Bloquear dimensiones para Mesa Imperial
+  const locked = e.target.value === 'mesaimp';
+  document.getElementById('i-w').disabled = locked;
+  document.getElementById('i-h').disabled = locked;
 });
 
 // ─── NIGHT MODE ───────────────────────────────────────────
