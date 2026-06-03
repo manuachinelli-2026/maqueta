@@ -332,15 +332,15 @@ body.night .night-bloom { opacity: .58; }
         </filter>
 
         <!-- Zinc roof patterns for CASA -->
-        <pattern id="pattern-zinc-n" x="3.5" y="27" width=".3" height="7.5" patternUnits="userSpaceOnUse">
-          <rect width=".3" height="7.5" fill="#a8b0ae"/>
-          <rect x=".09" width=".13" height="7.5" fill="#d4dcd8" fill-opacity=".78"/>
-          <rect x=".22" width=".05" height="7.5" fill="#909898" fill-opacity=".4"/>
+        <pattern id="pattern-zinc-n" x="3.5" y="27" width=".3" height="4" patternUnits="userSpaceOnUse">
+          <rect width=".3" height="4" fill="#a8b0ae"/>
+          <rect x=".09" width=".13" height="4" fill="#d4dcd8" fill-opacity=".78"/>
+          <rect x=".22" width=".05" height="4" fill="#909898" fill-opacity=".4"/>
         </pattern>
-        <pattern id="pattern-zinc-s" x="3.5" y="34.5" width=".3" height="7.5" patternUnits="userSpaceOnUse">
-          <rect width=".3" height="7.5" fill="#888e8c"/>
-          <rect x=".09" width=".13" height="7.5" fill="#b0b8b6" fill-opacity=".7"/>
-          <rect x=".22" width=".05" height="7.5" fill="#70787a" fill-opacity=".4"/>
+        <pattern id="pattern-zinc-s" x="3.5" y="31" width=".3" height="4" patternUnits="userSpaceOnUse">
+          <rect width=".3" height="4" fill="#888e8c"/>
+          <rect x=".09" width=".13" height="4" fill="#b0b8b6" fill-opacity=".7"/>
+          <rect x=".22" width=".05" height="4" fill="#70787a" fill-opacity=".4"/>
         </pattern>
 
         <!-- Ambient light filter for light layer -->
@@ -387,23 +387,22 @@ body.night .night-bloom { opacity: .58; }
       <!-- Troncos sutiles -->
       <g fill="#1a1008" opacity=".45"><circle cx="0" cy="1.1" r=".1"/><circle cx="2.5" cy="1.1" r=".1"/><circle cx="5" cy="1.1" r=".1"/><circle cx="7.5" cy="1.1" r=".1"/><circle cx="10" cy="1.1" r=".1"/><circle cx="12.5" cy="1.1" r=".1"/><circle cx="15" cy="1.1" r=".1"/><circle cx="17.5" cy="1.1" r=".1"/><circle cx="20" cy="1.1" r=".1"/><circle cx="22.5" cy="1.1" r=".1"/><circle cx="25" cy="1.1" r=".1"/><circle cx="1.25" cy="2.9" r=".1"/><circle cx="3.75" cy="2.9" r=".1"/><circle cx="6.25" cy="2.9" r=".1"/><circle cx="8.75" cy="2.9" r=".1"/><circle cx="11.25" cy="2.9" r=".1"/><circle cx="13.75" cy="2.9" r=".1"/><circle cx="16.25" cy="2.9" r=".1"/><circle cx="18.75" cy="2.9" r=".1"/><circle cx="21.25" cy="2.9" r=".1"/><circle cx="23.75" cy="2.9" r=".1"/></g>
 
-      <!-- ── A1: CASA · techo zinc dos aguas (movida 2m norte) ── -->
+      <!-- ── A1: CASA · techo zinc dos aguas · 20×8 m ── -->
       <!-- Sombra -->
-      <rect x="3.7" y="27.2" width="20.2" height="15.2" fill="#0a0808" fill-opacity=".2" rx=".1"/>
-      <!-- Camino de pasto (2m entre el campo y la casa) — vacío, pasto visible -->
+      <rect x="3.7" y="27.2" width="20.2" height="8.2" fill="#0a0808" fill-opacity=".2" rx=".1"/>
       <!-- Slope norte (chapa gris metálica brillosa) -->
-      <rect x="3.5" y="27" width="20" height="7.5" fill="url(#pattern-zinc-n)"/>
+      <rect x="3.5" y="27" width="20" height="4" fill="url(#pattern-zinc-n)"/>
       <!-- Slope sur -->
-      <rect x="3.5" y="34.5" width="20" height="7.5" fill="url(#pattern-zinc-s)"/>
+      <rect x="3.5" y="31" width="20" height="4" fill="url(#pattern-zinc-s)"/>
       <!-- Caballete (ridge) -->
-      <line x1="3.5" y1="34.5" x2="23.5" y2="34.5" stroke="#505858" stroke-width=".2"/>
+      <line x1="3.5" y1="31" x2="23.5" y2="31" stroke="#505858" stroke-width=".2"/>
       <!-- Contorno exterior -->
-      <rect x="3.5" y="27" width="20" height="15" fill="none" stroke="#505858" stroke-width=".2"/>
+      <rect x="3.5" y="27" width="20" height="8" fill="none" stroke="#505858" stroke-width=".2"/>
       <!-- Hastiales -->
-      <line x1="3.5" y1="27" x2="3.5" y2="42" stroke="#505858" stroke-width=".14"/>
-      <line x1="23.5" y1="27" x2="23.5" y2="42" stroke="#505858" stroke-width=".14"/>
+      <line x1="3.5" y1="27" x2="3.5" y2="35" stroke="#505858" stroke-width=".14"/>
+      <line x1="23.5" y1="27" x2="23.5" y2="35" stroke="#505858" stroke-width=".14"/>
       <!-- Texto -->
-      <text x="13.5" y="36.0" text-anchor="middle" font-size="1.1" fill="#505858" font-family="Courier New" letter-spacing=".08em" font-weight="bold">CASA</text>
+      <text x="13.5" y="31.8" text-anchor="middle" font-size="1.1" fill="#505858" font-family="Courier New" letter-spacing=".08em" font-weight="bold">CASA</text>
 
       <!-- ── A1: ÁRBOLES LATERAL OESTE ── -->
       <circle cx="1" cy="6"  r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
