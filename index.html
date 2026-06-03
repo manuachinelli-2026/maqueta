@@ -1681,254 +1681,174 @@ function drawLivingFardos(g, item, sel) {
 }
 
 // ─── BAÑO VIP · Módulo Sanitario 5 compartimentos ─────────
-// Medidas: Largo 4.5m (habitáculo) + 2m (lanza) · Ancho 2.5m + 1.5m (escaleras) · Alto 3.1m
-// Superficie total: 6.5 × 4 m
 function drawSanitario(g, item, sel) {
   const w = item.w, h = item.h;
+  const compW = w / 5;
 
-  // Proporciones según plano técnico del PDF:
-  //   Lanza: 2/6.5 del ancho total
-  //   Habitáculo: 4.5/6.5 del ancho total
-  //   Alto habitáculo: 2.5/4 del alto total
-  //   Escaleras: 1.5/4 del alto total (cuelgan hacia abajo)
-  const lanzaW  = w * (2   / 6.5);
-  const bodyW   = w * (4.5 / 6.5);
-  const bodyH   = h * (2.5 / 4);
-  const bodyX   = lanzaW;
-  const bodyY   = 0;
-  const stairsH = h * (1.5 / 4);
-  const stairsY = bodyH;
-  const compW   = bodyW / 5;
-
-  // ── SOMBRA GENERAL ──
+  // ── SOMBRA ──
   g.appendChild(el('rect', {
-    x: .07, y: .09, width: w, height: h,
-    fill: '#000', 'fill-opacity': '.28', rx: '.12', 'pointer-events': 'none',
+    x: .08, y: .1, width: w, height: h,
+    fill: '#000', 'fill-opacity': '.3', rx: '.1', 'pointer-events': 'none',
   }));
 
-  // ── LANZA (enganche del trailer) ──
-  const lanzaThick = bodyH * .16;
-  const lanzaY     = bodyH / 2 - lanzaThick / 2;
-  // Cuerpo de la lanza
+  // ── CUERPO: marco charcoal grueso ──
   g.appendChild(el('rect', {
-    x: 0, y: lanzaY, width: lanzaW + .04, height: lanzaThick,
-    fill: '#484848', stroke: '#2a2a2a', 'stroke-width': '.03', rx: '.04',
-  }));
-  g.appendChild(el('rect', {
-    x: .04, y: lanzaY + .02, width: lanzaW - .06, height: lanzaThick * .32,
-    fill: '#707070', 'fill-opacity': '.55', rx: '.03', 'pointer-events': 'none',
-  }));
-  // Gancho (enganche esférico)
-  g.appendChild(el('circle', {
-    cx: .14, cy: bodyH / 2, r: lanzaThick * .44,
-    fill: '#303030', stroke: '#1a1a1a', 'stroke-width': '.025',
-  }));
-  g.appendChild(el('circle', {
-    cx: .14, cy: bodyH / 2, r: lanzaThick * .18,
-    fill: '#606060', 'pointer-events': 'none',
+    x: 0, y: 0, width: w, height: h,
+    fill: '#2e2e2e', rx: '.1',
   }));
 
-  // ── CUERPO PRINCIPAL DEL HABITÁCULO ──
-  // Base oscura (borde grueso charcoal)
+  // ── SUPERFICIE BLANCA interior ──
+  const brd = Math.min(h * .08, .12);
   g.appendChild(el('rect', {
-    x: bodyX, y: bodyY, width: bodyW, height: bodyH,
-    fill: '#2e2e2e', rx: '.08',
+    x: brd, y: brd, width: w - brd*2, height: h - brd*2,
+    fill: '#f3f1ed', rx: '.06',
   }));
-  // Superficie blanca principal
-  g.appendChild(el('rect', {
-    x: bodyX + .05, y: bodyY + .05, width: bodyW - .1, height: bodyH - .1,
-    fill: '#f2f0ec', stroke: '#3a3a3a', 'stroke-width': '.055', rx: '.06',
-  }));
-  // Reflejo/brillo superior
-  g.appendChild(el('rect', {
-    x: bodyX + .09, y: bodyY + .07, width: bodyW - .18, height: bodyH * .16,
-    fill: '#fff', 'fill-opacity': '.48', rx: '.04', 'pointer-events': 'none',
-  }));
-  // Trim de esquinas (chaflán charcoal oscuro)
-  const tW = bodyW * .055, tH = bodyH * .11;
-  for (const [tx, ty] of [
-    [bodyX + .05, bodyY + .05],
-    [bodyX + bodyW - .05 - tW, bodyY + .05],
-    [bodyX + .05, bodyY + bodyH - .05 - tH],
-    [bodyX + bodyW - .05 - tW, bodyY + bodyH - .05 - tH],
-  ]) {
-    g.appendChild(el('rect', {
-      x: tx, y: ty, width: tW, height: tH,
-      fill: '#2e2e2e', rx: '.025', 'pointer-events': 'none',
-    }));
-  }
 
-  // ── DIVISORES DE COMPARTIMENTOS (5 espacios) ──
+  // Reflejo/brillo superior (sensación de chapa pintada)
+  g.appendChild(el('rect', {
+    x: brd + .04, y: brd + .03,
+    width: w - brd*2 - .08, height: (h - brd*2) * .15,
+    fill: '#fff', 'fill-opacity': '.45', rx: '.04', 'pointer-events': 'none',
+  }));
+
+  // ── DIVISORES DE COMPARTIMENTOS (paredes internas) ──
   for (let i = 1; i < 5; i++) {
-    const dx = bodyX + .05 + (bodyW - .1) * i / 5;
-    g.appendChild(el('line', {
-      x1: dx, y1: bodyY + .05, x2: dx, y2: bodyY + bodyH - .05,
-      stroke: '#4a4a4a', 'stroke-width': '.045', 'pointer-events': 'none',
+    const dx = compW * i;
+    g.appendChild(el('rect', {
+      x: dx - .04, y: brd, width: .08, height: h - brd*2,
+      fill: '#2e2e2e', 'pointer-events': 'none',
     }));
   }
 
-  // ── PUERTAS (arcos de apertura) ──
+  // ── PUERTAS: arco de apertura por compartimento ──
   for (let i = 0; i < 5; i++) {
-    const doorCx = bodyX + .05 + compW * i;
-    const doorCy = bodyY + bodyH - .08;
-    const doorR  = Math.min(compW * .55, bodyH * .32);
-    // Arco de puerta (indica apertura)
-    g.appendChild(el('path', {
-      d: `M ${doorCx} ${doorCy} A ${doorR} ${doorR} 0 0 1 ${doorCx + doorR} ${doorCy - doorR}`,
-      fill: 'none', stroke: '#999', 'stroke-width': '.018',
-      'pointer-events': 'none',
+    const doorX = compW * i + brd * .5;
+    const doorY = brd * 1.1;
+    const doorW = compW - brd;
+    const doorH = h - brd * 2.2;
+    const arcR  = Math.min(doorW * .7, doorH * .55);
+    // Fondo del compartimento (levemente grisáceo)
+    g.appendChild(el('rect', {
+      x: compW * i + brd*.5, y: brd,
+      width: compW - brd, height: h - brd*2,
+      fill: '#ece9e2', rx: '.03',
     }));
     // Línea de la puerta
     g.appendChild(el('line', {
-      x1: doorCx, y1: doorCy - doorR,
-      x2: doorCx, y2: doorCy,
-      stroke: '#999', 'stroke-width': '.018', 'pointer-events': 'none',
+      x1: compW * i + brd*.5, y1: h - brd,
+      x2: compW * i + brd*.5, y2: h - brd - arcR,
+      stroke: '#aaa', 'stroke-width': '.025', 'pointer-events': 'none',
+    }));
+    // Arco de apertura
+    g.appendChild(el('path', {
+      d: `M ${compW*i+brd*.5} ${h-brd} A ${arcR} ${arcR} 0 0 1 ${compW*i+brd*.5+arcR} ${h-brd}`,
+      fill: '#ddd9d0', stroke: '#aaa', 'stroke-width': '.02', 'pointer-events': 'none',
     }));
   }
 
-  // ── ÍCONOS DE GÉNERO ──
-  // Compartimentos 0,1,2 → Damas; 3,4 → Caballeros
-  const iconY  = bodyY + bodyH * .4;
-  const iconFs = Math.min(compW * .55, bodyH * .25);
+  // ── ÍCONOS DE GÉNERO (grandes y claros) ──
+  // Compartimentos 0,1,2 → ♀ Damas  |  3,4 → ♂ Caballeros
+  const iconR  = Math.min(compW * .18, h * .14);
+  const iconCY = brd + (h - brd*2) * .38;
   for (let i = 0; i < 5; i++) {
-    const icx  = bodyX + .05 + compW * (i + .5);
+    const icx = compW * (i + .5);
     const isFemale = i < 3;
     // Cabeza
     g.appendChild(el('circle', {
-      cx: icx, cy: iconY - iconFs * .48, r: iconFs * .16,
-      fill: '#333', 'pointer-events': 'none',
+      cx: icx, cy: iconCY - iconR * 1.55, r: iconR * .52,
+      fill: '#3a3a3a', 'pointer-events': 'none',
     }));
     if (isFemale) {
-      // Falda (triángulo)
+      // Cuerpo femenino (triángulo = falda)
       g.appendChild(el('polygon', {
-        points: `${icx},${iconY - iconFs * .3} ${icx - iconFs * .22},${iconY + iconFs * .28} ${icx + iconFs * .22},${iconY + iconFs * .28}`,
-        fill: '#333', 'pointer-events': 'none',
+        points: `${icx},${iconCY - iconR*1.0} ${icx - iconR*.85},${iconCY + iconR*.8} ${icx + iconR*.85},${iconCY + iconR*.8}`,
+        fill: '#3a3a3a', 'pointer-events': 'none',
       }));
     } else {
-      // Cuerpo rectangular (masculino)
+      // Cuerpo masculino (rectángulo)
       g.appendChild(el('rect', {
-        x: icx - iconFs * .16, y: iconY - iconFs * .3,
-        width: iconFs * .32, height: iconFs * .5,
-        fill: '#333', rx: '.02', 'pointer-events': 'none',
+        x: icx - iconR * .55, y: iconCY - iconR * 1.0,
+        width: iconR * 1.1, height: iconR * 1.55,
+        fill: '#3a3a3a', rx: '.04', 'pointer-events': 'none',
       }));
     }
   }
 
-  // ── TEXTO "BAÑOS VIP" ──
-  const bvTxt = el('text', {
-    x: bodyX + bodyW / 2, y: bodyY + bodyH * .82,
-    'text-anchor': 'middle', 'font-size': (bodyH * .085).toFixed(3),
-    fill: '#555', 'font-family': 'Courier New',
-    'fill-opacity': '.7', 'letter-spacing': '.06em',
-    'pointer-events': 'none',
-  });
-  bvTxt.textContent = '— BAÑOS VIP —';
-  g.appendChild(bvTxt);
-
-  // ── LUCES COLGANTES TIPO RATÁN (3 lámparas sobre el habitáculo) ──
-  const nLamps = 3;
+  // ── LUCES COLGANTES TIPO RATÁN (3 lámparas) ──
+  const nLamps  = 3;
+  const lampCY  = brd + (h - brd*2) * .72;
+  const lampR   = Math.min(compW * .22, h * .11);
   for (let i = 0; i < nLamps; i++) {
-    const lx    = bodyX + bodyW * (i + 1) / (nLamps + 1);
-    const ly    = bodyY + bodyH * .24;
-    const lR    = Math.min(compW * .28, bodyH * .13);
-    const delay = `${(i * .38).toFixed(2)}s`;
-
-    // Glow cálido (visible en modo noche)
+    const lx    = w * (i + 1) / (nLamps + 1);
+    const delay = `${(i * .4).toFixed(1)}s`;
+    // Glow cálido
     g.appendChild(el('circle', {
-      cx: lx, cy: ly, r: lR * 4.5,
-      fill: '#ffc040', 'fill-opacity': '1',
+      cx: lx, cy: lampCY, r: lampR * 5,
+      fill: '#ffb830', 'fill-opacity': '1',
       filter: 'url(#filter-led-bloom)',
       'pointer-events': 'none',
       class: 'led-strip-bloom',
       style: `animation-delay:${delay}`,
     }));
-    // Pantalla exterior ratán (marrón cálido)
+    // Pantalla exterior ratán
     g.appendChild(el('circle', {
-      cx: lx, cy: ly, r: lR,
-      fill: '#8a5a18', stroke: '#4a2e08', 'stroke-width': '.025',
+      cx: lx, cy: lampCY, r: lampR,
+      fill: '#7a4e10', stroke: '#3e2208', 'stroke-width': '.022',
       'pointer-events': 'none',
     }));
-    // Trama ratán (líneas radiales)
+    // Trama de fibra radial
     for (let r = 0; r < 8; r++) {
-      const angle = r * Math.PI / 4;
-      const r1 = lR * .3, r2 = lR * .9;
+      const a = r * Math.PI / 4;
       g.appendChild(el('line', {
-        x1: (lx + Math.cos(angle) * r1).toFixed(3),
-        y1: (ly + Math.sin(angle) * r1).toFixed(3),
-        x2: (lx + Math.cos(angle) * r2).toFixed(3),
-        y2: (ly + Math.sin(angle) * r2).toFixed(3),
-        stroke: '#5a3208', 'stroke-width': '.015',
-        'pointer-events': 'none',
+        x1: (lx + Math.cos(a)*lampR*.28).toFixed(3), y1: (lampCY + Math.sin(a)*lampR*.28).toFixed(3),
+        x2: (lx + Math.cos(a)*lampR*.9).toFixed(3),  y2: (lampCY + Math.sin(a)*lampR*.9).toFixed(3),
+        stroke: '#4a2a08', 'stroke-width': '.013', 'pointer-events': 'none',
       }));
     }
-    // Anillo interior de la pantalla
+    // Centro luminoso ámbar
     g.appendChild(el('circle', {
-      cx: lx, cy: ly, r: lR * .52,
-      fill: '#f0a820', 'fill-opacity': '.88',
+      cx: lx, cy: lampCY, r: lampR * .48,
+      fill: '#f0a020',
       filter: 'url(#filter-led)',
       'pointer-events': 'none',
       class: 'led-bulb',
       style: `animation-delay:${delay}`,
     }));
-    // Núcleo brillante
     g.appendChild(el('circle', {
-      cx: lx, cy: ly, r: lR * .22,
-      fill: '#fff8d0', 'fill-opacity': '.95',
-      'pointer-events': 'none',
+      cx: lx, cy: lampCY, r: lampR * .2,
+      fill: '#fff8d0', 'pointer-events': 'none',
     }));
   }
 
-  // ── ESCALERAS (lateral, 3 peldaños) ──
-  const nSteps  = 3;
-  const stepH   = stairsH / nSteps;
-  const shadowC = ['#b8b8b4', '#c8c8c4', '#d8d8d4'];
-  for (let i = 0; i < nSteps; i++) {
-    const sY   = stairsY + i * stepH;
-    const sX   = bodyX + bodyW * (i * .05);
-    const sW   = bodyW * (1 - i * .05);
+  // ── TEXTO "BAÑOS VIP" ──
+  const bvTxt = el('text', {
+    x: w / 2, y: h * .5 + .02,
+    'text-anchor': 'middle', 'font-size': (Math.min(h * .09, compW * .38)).toFixed(3),
+    fill: '#555', 'font-family': 'Courier New',
+    'fill-opacity': '.6', 'letter-spacing': '.05em',
+    'pointer-events': 'none',
+  });
+  bvTxt.textContent = '— BAÑOS VIP —';
+  g.appendChild(bvTxt);
+
+  // ── ESCALERAS (franja lateral derecha, 3 peldaños) ──
+  const stW = Math.min(w * .12, .4);
+  const stColors = ['#b0b0ac', '#c0c0bc', '#d0d0cc'];
+  for (let i = 0; i < 3; i++) {
+    const sX = w + i * stW * .35;
+    const sH = (h - brd*2) * (1 - i * .12);
+    const sY = brd + (h - brd*2) * (i * .06);
     g.appendChild(el('rect', {
-      x: sX + .03, y: sY + .03, width: sW, height: stepH,
-      fill: '#000', 'fill-opacity': '.18', rx: '.03', 'pointer-events': 'none',
+      x: sX, y: sY, width: stW, height: sH,
+      fill: stColors[i], stroke: '#888', 'stroke-width': '.02', rx: '.02',
     }));
-    g.appendChild(el('rect', {
-      x: sX, y: sY, width: sW, height: stepH,
-      fill: shadowC[i], stroke: '#909090', 'stroke-width': '.025', rx: '.03',
-    }));
-    // Borde de peldaño (antideslizante)
     g.appendChild(el('line', {
-      x1: sX + .04, y1: sY + .03,
-      x2: sX + sW - .04, y2: sY + .03,
-      stroke: '#fff', 'stroke-width': '.022', 'stroke-opacity': '.6',
-      'pointer-events': 'none',
-    }));
-    // Pasamano central (línea a lo largo)
-    g.appendChild(el('line', {
-      x1: sX, y1: sY + stepH / 2,
-      x2: sX + sW, y2: sY + stepH / 2,
-      stroke: '#888', 'stroke-width': '.012', 'stroke-dasharray': '.06,.06',
-      'pointer-events': 'none',
+      x1: sX + .025, y1: sY + .025, x2: sX + stW - .025, y2: sY + .025,
+      stroke: '#fff', 'stroke-width': '.02', 'stroke-opacity': '.55', 'pointer-events': 'none',
     }));
   }
 
-  // ── RUEDAS DEL TRAILER (vista superior) ──
-  const whlR = bodyH * .065;
-  for (const wy of [bodyY + bodyH * .22, bodyY + bodyH * .70]) {
-    // Rueda (oval vista de arriba)
-    g.appendChild(el('ellipse', {
-      cx: bodyX + bodyW - whlR * .5, cy: wy,
-      rx: whlR * .42, ry: whlR,
-      fill: '#161616', stroke: '#2a2a2a', 'stroke-width': '.018',
-      'pointer-events': 'none',
-    }));
-    // Aro
-    g.appendChild(el('ellipse', {
-      cx: bodyX + bodyW - whlR * .5, cy: wy,
-      rx: whlR * .22, ry: whlR * .52,
-      fill: '#484848', 'pointer-events': 'none',
-    }));
-  }
-
-  // ── LABEL Y DIMENSIONES ──
+  // ── LABEL ──
   const lbl = el('text', {
     x: w / 2, y: h + .38,
     'text-anchor': 'middle', 'font-size': '.38',
@@ -1944,7 +1864,7 @@ function drawSanitario(g, item, sel) {
     fill: '#d4a870', 'font-family': 'Courier New',
     'fill-opacity': '.52', 'pointer-events': 'none',
   });
-  dim.textContent = `6.5 × 4 m · Baño VIP · hasta 200 pers`;
+  dim.textContent = `${w} × ${h} m · Baño VIP · hasta 200 pers`;
   g.appendChild(dim);
 
   // Hit area
@@ -2606,8 +2526,8 @@ document.getElementById('i-type').addEventListener('change', e => {
     document.getElementById('i-w').value = 0.3;
     document.getElementById('i-h').value = 0.3;
   } else if (e.target.value === 'sanitario') {
-    document.getElementById('i-w').value = 6.5;
-    document.getElementById('i-h').value = 4;
+    document.getElementById('i-w').value = 4.5;
+    document.getElementById('i-h').value = 2.5;
   } else if (e.target.value === 'texto') {
     document.getElementById('i-w').value = 3;
     document.getElementById('i-h').value = 0.5;
