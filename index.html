@@ -328,13 +328,15 @@ body.night .night-bloom { opacity: .58; }
         </filter>
 
         <!-- Zinc roof patterns for CASA -->
-        <pattern id="pattern-zinc-n" x="3.5" y="29" width=".32" height="7.5" patternUnits="userSpaceOnUse">
-          <rect width=".32" height="7.5" fill="#9a8068"/>
-          <rect x=".1" width=".12" height="7.5" fill="#b89878" fill-opacity=".65"/>
+        <pattern id="pattern-zinc-n" x="3.5" y="27" width=".3" height="7.5" patternUnits="userSpaceOnUse">
+          <rect width=".3" height="7.5" fill="#a8b0ae"/>
+          <rect x=".09" width=".13" height="7.5" fill="#d4dcd8" fill-opacity=".78"/>
+          <rect x=".22" width=".05" height="7.5" fill="#909898" fill-opacity=".4"/>
         </pattern>
-        <pattern id="pattern-zinc-s" x="3.5" y="36.5" width=".32" height="7.5" patternUnits="userSpaceOnUse">
-          <rect width=".32" height="7.5" fill="#7a6050"/>
-          <rect x=".1" width=".12" height="7.5" fill="#9a7860" fill-opacity=".55"/>
+        <pattern id="pattern-zinc-s" x="3.5" y="34.5" width=".3" height="7.5" patternUnits="userSpaceOnUse">
+          <rect width=".3" height="7.5" fill="#888e8c"/>
+          <rect x=".09" width=".13" height="7.5" fill="#b0b8b6" fill-opacity=".7"/>
+          <rect x=".22" width=".05" height="7.5" fill="#70787a" fill-opacity=".4"/>
         </pattern>
 
         <!-- Ambient light filter for light layer -->
@@ -370,22 +372,23 @@ body.night .night-bloom { opacity: .58; }
             font-size=".85" fill="#4a6a30" font-family="Courier New"
             letter-spacing=".05em">HILERA DE ÁRBOLES · 4 M</text>
 
-      <!-- ── A1: CASA · techo zinc dos aguas ── -->
+      <!-- ── A1: CASA · techo zinc dos aguas (movida 2m norte) ── -->
       <!-- Sombra -->
-      <rect x="3.7" y="29.2" width="20.2" height="15.2" fill="#0a0808" fill-opacity=".2" rx=".1"/>
-      <!-- Slope norte (más claro, perpendicular al sol) -->
-      <rect x="3.5" y="29" width="20" height="7.5" fill="url(#pattern-zinc-n)"/>
-      <!-- Slope sur (más oscuro) -->
-      <rect x="3.5" y="36.5" width="20" height="7.5" fill="url(#pattern-zinc-s)"/>
-      <!-- Caballete (ridge line) -->
-      <line x1="3.5" y1="36.5" x2="23.5" y2="36.5" stroke="#3a2818" stroke-width=".18"/>
+      <rect x="3.7" y="27.2" width="20.2" height="15.2" fill="#0a0808" fill-opacity=".2" rx=".1"/>
+      <!-- Camino de pasto (2m entre el campo y la casa) — vacío, pasto visible -->
+      <!-- Slope norte (chapa gris metálica brillosa) -->
+      <rect x="3.5" y="27" width="20" height="7.5" fill="url(#pattern-zinc-n)"/>
+      <!-- Slope sur -->
+      <rect x="3.5" y="34.5" width="20" height="7.5" fill="url(#pattern-zinc-s)"/>
+      <!-- Caballete (ridge) -->
+      <line x1="3.5" y1="34.5" x2="23.5" y2="34.5" stroke="#505858" stroke-width=".2"/>
       <!-- Contorno exterior -->
-      <rect x="3.5" y="29" width="20" height="15" fill="none" stroke="#3a2818" stroke-width=".18"/>
-      <!-- Hastiales (testeros) triangulares - líneas de pendiente -->
-      <line x1="3.5" y1="29" x2="3.5" y2="44" stroke="#3a2818" stroke-width=".12"/>
-      <line x1="23.5" y1="29" x2="23.5" y2="44" stroke="#3a2818" stroke-width=".12"/>
+      <rect x="3.5" y="27" width="20" height="15" fill="none" stroke="#505858" stroke-width=".2"/>
+      <!-- Hastiales -->
+      <line x1="3.5" y1="27" x2="3.5" y2="42" stroke="#505858" stroke-width=".14"/>
+      <line x1="23.5" y1="27" x2="23.5" y2="42" stroke="#505858" stroke-width=".14"/>
       <!-- Texto -->
-      <text x="13.5" y="38.5" text-anchor="middle" font-size="1.1" fill="#2a1a0a" font-family="Courier New" letter-spacing=".08em" font-weight="bold">CASA</text>
+      <text x="13.5" y="36.0" text-anchor="middle" font-size="1.1" fill="#505858" font-family="Courier New" letter-spacing=".08em" font-weight="bold">CASA</text>
 
       <!-- ── A1: ÁRBOLES LATERAL OESTE ── -->
       <circle cx="1" cy="6"  r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
@@ -510,7 +513,8 @@ body.night .night-bloom { opacity: .58; }
         <circle cx="49" cy="0" r=".1"/> <circle cx="51" cy="0" r=".1"/>
       </g>
 
-      <!-- ── GINGO · Ginkgo biloba · vista superior · Ø 3m ── -->
+      <!-- ── GINGO · Ginkgo biloba · vista superior · Ø 3m (movido 3m oeste) ── -->
+      <g transform="translate(-3,0)">
       <!-- Sombra -->
       <ellipse cx="47.9" cy="2.9" rx="1.7" ry="1.6" fill="#0c1606" fill-opacity=".2"/>
       <!-- Base -->
@@ -555,8 +559,10 @@ body.night .night-bloom { opacity: .58; }
       <circle cx="47.5" cy="2.2" r=".2" fill="#3a2a10" stroke="#201808" stroke-width=".055"/>
       <!-- Label -->
       <text x="47.5" y="4.7" text-anchor="middle" font-size=".76" fill="#325818" font-family="Courier New">GINGO</text>
+      </g>
 
-      <!-- ── OMBÚ · vista superior · Ø ~2.4m ── -->
+      <!-- ── OMBÚ · vista superior · Ø ~2.4m (movido 3m oeste) ── -->
+      <g transform="translate(-3,0)">
       <ellipse cx="42.8" cy="2.85" rx="1.35" ry="1.25" fill="#0a1404" fill-opacity=".2"/>
       <circle cx="42.5" cy="2.3"  r="1.18"  fill="#1c3808"/>
       <ellipse cx="42.5" cy="1.4"  rx=".72" ry=".6"  fill="#283e0e"/>
@@ -590,6 +596,7 @@ body.night .night-bloom { opacity: .58; }
       <circle cx="42.5" cy="2.3" r=".11" fill="#181208"/>
       <!-- Label -->
       <text x="42.5" y="4.6" text-anchor="middle" font-size=".76" fill="#325818" font-family="Courier New">OMBÚ</text>
+      </g>
 
       <!-- ── ÁLAMOS ESTE ── -->
       <circle cx="53" cy="3"  r=".5" fill="none" stroke="#5a8040" stroke-width=".18"/>
@@ -682,6 +689,8 @@ body.night .night-bloom { opacity: .58; }
           <option value="bebedero">Bebedero</option>
           <option value="reflector">Reflector</option>
           <option value="cuina">Cuina Catering</option>
+          <option value="barra">Barra de fardos</option>
+          <option value="living">Living Gervasioni</option>
           <option value="otro">Otro</option>
         </select>
       </label>
@@ -764,6 +773,8 @@ const TYPES = {
   bebedero:  { label: 'Bebedero',       color: '#4aacdc', fg: '#001828' },
   reflector: { label: 'Reflector',     color: '#e8e0a0', fg: '#1a1800' },
   cuina:     { label: 'Cuina Catering', color: '#c8a040', fg: '#1a1000' },
+  barra:     { label: 'Barra de fardos', color: '#c8b060', fg: '#1a1200' },
+  living:    { label: 'Living Gervasioni', color: '#c0906c', fg: '#1a0c00' },
   otro:      { label: 'Otro',          color: '#6a6a6a', fg: '#f0f0f0' },
 };
 
@@ -870,6 +881,10 @@ function buildItem(item, sel) {
     drawReflector(inner, item, sel);
   } else if (item.type === 'cuina') {
     drawCuina(inner, item, sel);
+  } else if (item.type === 'barra') {
+    drawBarra(inner, item, sel);
+  } else if (item.type === 'living') {
+    drawLiving(inner, item, sel);
   } else {
     // Drop shadow
     inner.appendChild(el('rect', {
@@ -1571,12 +1586,152 @@ function drawCuina(g, item, sel) {
   }
 }
 
+// ─── BARRA DE FARDOS ──────────────────────────────────────
+function drawBarra(g, item, sel) {
+  const w = item.w, h = item.h;
+  const baleR = Math.min(h * .42, .52);
+  const nBales = Math.max(2, Math.round(w / (baleR * 2.1)));
+  const baleSpacing = w / nBales;
+
+  // Sombra
+  g.appendChild(el('rect', { x:.04, y:.05, width:w, height:h, fill:'#000', 'fill-opacity':'.2', rx:'.08', 'pointer-events':'none' }));
+
+  // ── FARDOS (heno, vista superior = círculos concéntricos) ──
+  for (let i = 0; i < nBales; i++) {
+    const cx = (i + .5) * baleSpacing;
+    const cy = h * .58;
+    g.appendChild(el('circle', { cx, cy, r:baleR, fill:'#b89020', stroke:'#8a6410', 'stroke-width':'.04' }));
+    g.appendChild(el('circle', { cx, cy, r:baleR*.68, fill:'none', stroke:'#c8a030', 'stroke-width':'.028' }));
+    g.appendChild(el('circle', { cx, cy, r:baleR*.38, fill:'#d4b840', 'fill-opacity':'.75' }));
+    // Radios del heno
+    for (let a = 0; a < 8; a++) {
+      const rad = a * Math.PI / 4;
+      const x1 = cx + Math.cos(rad)*baleR*.32, y1 = cy + Math.sin(rad)*baleR*.32;
+      const x2 = cx + Math.cos(rad)*baleR*.9,  y2 = cy + Math.sin(rad)*baleR*.9;
+      g.appendChild(el('line', { x1:x1.toFixed(2), y1:y1.toFixed(2), x2:x2.toFixed(2), y2:y2.toFixed(2), stroke:'#9a7018', 'stroke-width':'.014', 'pointer-events':'none' }));
+    }
+  }
+
+  // ── TELA BLANCA encima (mantel/telón) ──
+  g.appendChild(el('rect', { x:-.04, y:0, width:w+.08, height:h*.68, fill:'#f4f4ee', 'fill-opacity':'.88', stroke:'#dcdcca', 'stroke-width':'.03', rx:'.05', 'pointer-events':'none' }));
+  // Pliegues de tela
+  for (let f = 1; f < nBales; f++) {
+    const fx = f * baleSpacing;
+    g.appendChild(el('line', { x1:fx, y1:0, x2:fx+.05, y2:h*.62, stroke:'#dcdcca', 'stroke-width':'.015', 'pointer-events':'none' }));
+  }
+
+  // ── BOTELLAS Y COPAS ──
+  const nItems = Math.round(w / .45);
+  for (let i = 0; i < nItems; i++) {
+    const bx = (i + .5) * w / nItems;
+    const by = h * .22;
+    if (i % 3 === 1) {
+      // Copa de vidrio
+      g.appendChild(el('circle', { cx:bx, cy:by, r:'.052', fill:'#d8ecfc', 'fill-opacity':'.9', stroke:'#90b8d8', 'stroke-width':'.018', 'pointer-events':'none' }));
+    } else {
+      // Botella
+      g.appendChild(el('ellipse', { cx:bx, cy:by, rx:'.045', ry:'.08', fill:'#243a14', stroke:'#182a0c', 'stroke-width':'.016', 'pointer-events':'none' }));
+    }
+  }
+
+  // ── BARTENDERS ──
+  const nStaff = Math.min(3, Math.max(2, Math.round(w / 1.8)));
+  const pCols = ['#d4b090','#c8a078','#daba98'];
+  for (let i = 0; i < nStaff; i++) {
+    const sx = w*(i+.5)/nStaff, sy = h*.9;
+    const p = el('circle', { cx:sx, cy:sy, r:'.12', fill:pCols[i%pCols.length], 'pointer-events':'none' });
+    p.appendChild(makeSMIL('cx', `${sx};${sx+.09};${sx};${sx-.07};${sx}`, `${2.4+i*.5}s`, `${i*.65}s`));
+    g.appendChild(p);
+    g.appendChild(el('circle', { cx:sx, cy:sy-.1, r:'.06', fill:'#f0f0f0', 'pointer-events':'none' }));
+  }
+
+  // Label
+  const lbl = el('text', { x:w/2, y:h+.36, 'text-anchor':'middle', 'font-size':'.36', fill:'#c8b060', 'font-family':'Courier New', 'fill-opacity':'.88', 'pointer-events':'none' });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+  const dim = el('text', { x:w/2, y:h+.6, 'text-anchor':'middle', 'font-size':'.28', fill:'#c8b060', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
+  dim.textContent = `${w} × ${h} m`;
+  g.appendChild(dim);
+
+  g.appendChild(el('rect', { x:0, y:0, width:w, height:h, fill:'none', 'pointer-events':'all' }));
+  if (sel) {
+    g.appendChild(el('rect', { x:-.12, y:-.12, width:w+.24, height:h+.24, fill:'none', stroke:'#fff', 'stroke-width':'.1', rx:'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
+    for (const [cx,cy] of [[0,0],[w,0],[0,h],[w,h]])
+      g.appendChild(el('rect', { x:cx-.22, y:cy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
+// ─── LIVING GERVASIONI ────────────────────────────────────
+function drawLiving(g, item, sel) {
+  const w = item.w, h = item.h;
+  const cx = w/2, cy = h/2;
+  const ringR  = Math.min(w,h) * .38;
+  const tableR = Math.min(w,h) * .12;
+  const nChairs = 10;
+  const cW = Math.min(.34, ringR * .26); // chair seat width
+  const cH = cW * 1.25;
+
+  // Sombra sutil
+  g.appendChild(el('ellipse', { cx:cx+.07, cy:cy+.09, rx:ringR+.4, ry:ringR+.35, fill:'#000', 'fill-opacity':'.12', 'pointer-events':'none' }));
+
+  // ── 10 SILLAS TECA (teak chairs, circular arrangement) ──
+  for (let i = 0; i < nChairs; i++) {
+    const angle = (i / nChairs) * 2 * Math.PI - Math.PI/2;
+    const chx = cx + Math.cos(angle) * ringR;
+    const chy = cy + Math.sin(angle) * ringR;
+    const deg = angle * 180 / Math.PI + 90;
+
+    const sg = el('g', { transform:`rotate(${deg.toFixed(1)},${chx.toFixed(2)},${chy.toFixed(2)})`, 'pointer-events':'none' });
+    // Asiento teca (warm wood)
+    sg.appendChild(el('rect', { x:-cW/2, y:-cH*.38, width:cW, height:cH*.52, fill:'#a07038', stroke:'#6a4a1c', 'stroke-width':'.022', rx:'.05' }));
+    // Respaldo
+    sg.appendChild(el('rect', { x:-cW/2, y:-cH*.46, width:cW, height:cH*.2, fill:'#b88040', stroke:'#7a5218', 'stroke-width':'.018', rx:'.04' }));
+    // Listones del respaldo (3 slats)
+    for (let s = 0; s < 3; s++) {
+      const sx = -cW/2 + cW*(s+1)/4;
+      sg.appendChild(el('line', { x1:sx, y1:-cH*.46, x2:sx, y2:-cH*.26, stroke:'#6a4818', 'stroke-width':'.012' }));
+    }
+    // Cojín del asiento (blanco/crema)
+    sg.appendChild(el('rect', { x:-cW*.42, y:-cH*.3, width:cW*.84, height:cH*.38, fill:'#f4f0e4', 'fill-opacity':'.9', rx:'.04' }));
+    g.appendChild(sg);
+  }
+
+  // ── MESA CENTRAL REDONDA ──
+  g.appendChild(el('circle', { cx:cx+.05, cy:cy+.06, r:tableR, fill:'#000', 'fill-opacity':'.2', 'pointer-events':'none' }));
+  g.appendChild(el('circle', { cx, cy, r:tableR, fill:'#b8803a', stroke:'#8a5818', 'stroke-width':'.04' }));
+  g.appendChild(el('circle', { cx, cy, r:tableR*.6, fill:'none', stroke:'#c89448', 'stroke-width':'.022' }));
+  g.appendChild(el('circle', { cx, cy, r:tableR*.28, fill:'none', stroke:'#c89448', 'stroke-width':'.018' }));
+  // Copas en la mesa
+  for (const [ox,oy] of [[cx-.16,cy-.1],[cx+.12,cy+.07],[cx+.04,cy-.18]]) {
+    g.appendChild(el('circle', { cx:ox, cy:oy, r:'.038', fill:'#cce4f8', 'fill-opacity':'.88', stroke:'#90b8d8', 'stroke-width':'.014', 'pointer-events':'none' }));
+  }
+
+  // Label
+  const lbl = el('text', { x:cx, y:h+.36, 'text-anchor':'middle', 'font-size':'.36', fill:'#c0906c', 'font-family':'Courier New', 'fill-opacity':'.88', 'pointer-events':'none' });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+  const dim = el('text', { x:cx, y:h+.6, 'text-anchor':'middle', 'font-size':'.28', fill:'#c0906c', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
+  dim.textContent = `${nChairs} pers · Ø${(ringR*2+cH).toFixed(1)} m`;
+  g.appendChild(dim);
+
+  // Hit area (circle)
+  g.appendChild(el('circle', { cx, cy, r:ringR+cH+.1, fill:'none', 'pointer-events':'all' }));
+
+  if (sel) {
+    g.appendChild(el('circle', { cx, cy, r:ringR+cH+.22, fill:'none', stroke:'#fff', 'stroke-width':'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
+    for (const [hx,hy] of [[0,0],[w,0],[0,h],[w,h]])
+      g.appendChild(el('rect', { x:hx-.22, y:hy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────
 function itemSubLabel(it) {
   if (it.type === 'bombita')   return `${it.w} m · tira LED`;
   if (it.type === 'bebedero')  return `${it.w} × ${it.h} m · bebedero`;
   if (it.type === 'reflector') return `Ø ${it.w} m · reflector`;
   if (it.type === 'cuina')     return `${it.w} × ${it.h} m · catering`;
+  if (it.type === 'barra')     return `${it.w} m · fardos`;
+  if (it.type === 'living')    return `10 pers · living`;
   return `${it.w} × ${it.h} m`;
 }
 
@@ -1835,6 +1990,12 @@ document.getElementById('i-type').addEventListener('change', e => {
   } else if (e.target.value === 'cuina') {
     document.getElementById('i-w').value = 8;
     document.getElementById('i-h').value = 8;
+  } else if (e.target.value === 'barra') {
+    document.getElementById('i-w').value = 4;
+    document.getElementById('i-h').value = 1.2;
+  } else if (e.target.value === 'living') {
+    document.getElementById('i-w').value = 5;
+    document.getElementById('i-h').value = 5;
   }
 });
 
