@@ -784,7 +784,7 @@ const TYPES = {
   cuina:     { label: 'Cuina Catering', color: '#c8a040', fg: '#1a1000' },
   barra:     { label: 'Barra de fardos', color: '#c8b060', fg: '#1a1200' },
   living:    { label: 'Living Gervasioni', color: '#c0906c', fg: '#1a0c00' },
-  livingf:   { label: 'Living Fardos',    color: '#c8a828', fg: '#1a1000' },
+  livingf:   { label: 'Living Fardos',    color: '#bdb47e', fg: '#1a1000' },
   vela:      { label: 'Vela de piso',   color: '#f0a828', fg: '#1a0800' },
   texto:     { label: 'Texto',          color: '#1a1a1a', fg: '#ffffff' },
   otro:      { label: 'Otro',          color: '#6a6a6a', fg: '#f0f0f0' },
@@ -1619,15 +1619,15 @@ function drawLivingFardos(g, item, sel) {
 
   // Función auxiliar: dibuja un fardo redondo
   function bale(bcx, bcy) {
-    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR, fill:'#c4a028', stroke:'#8a6c10', 'stroke-width':'.03' }));
-    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.66, fill:'none', stroke:'#d4b030', 'stroke-width':'.022' }));
-    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.34, fill:'#d8bc40', 'fill-opacity':'.75' }));
+    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR, fill:'#bdb47e', stroke:'#9c9468', 'stroke-width':'.03' }));
+    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.66, fill:'none', stroke:'#cec994', 'stroke-width':'.022' }));
+    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.34, fill:'#d8d4a8', 'fill-opacity':'.75' }));
     for (let a=0;a<6;a++) {
       const rad=a*Math.PI/3;
       g.appendChild(el('line', {
         x1:(bcx+Math.cos(rad)*bR*.28).toFixed(2), y1:(bcy+Math.sin(rad)*bR*.28).toFixed(2),
         x2:(bcx+Math.cos(rad)*bR*.88).toFixed(2), y2:(bcy+Math.sin(rad)*bR*.88).toFixed(2),
-        stroke:'#9a7018', 'stroke-width':'.011', 'pointer-events':'none',
+        stroke:'#a89e6e', 'stroke-width':'.011', 'pointer-events':'none',
       }));
     }
   }
@@ -1655,10 +1655,10 @@ function drawLivingFardos(g, item, sel) {
   g.appendChild(el('rect', { x:cx-tW/2, y:cy-tH/2, width:tW, height:tH*.08, fill:'#c07830', 'fill-opacity':'.35', rx:'.07', 'pointer-events':'none' }));
 
   // Label
-  const lbl = el('text', { x:cx, y:h+.36, 'text-anchor':'middle', 'font-size':'.34', fill:'#c8a828', 'font-family':'Courier New', 'fill-opacity':'.9', 'pointer-events':'none' });
+  const lbl = el('text', { x:cx, y:h+.36, 'text-anchor':'middle', 'font-size':'.34', fill:'#bdb47e', 'font-family':'Courier New', 'fill-opacity':'.9', 'pointer-events':'none' });
   lbl.textContent = item.label;
   g.appendChild(lbl);
-  const dim = el('text', { x:cx, y:h+.58, 'text-anchor':'middle', 'font-size':'.26', fill:'#c8a828', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
+  const dim = el('text', { x:cx, y:h+.58, 'text-anchor':'middle', 'font-size':'.26', fill:'#bdb47e', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
   dim.textContent = `${w} × ${h} m`;
   g.appendChild(dim);
 
@@ -1824,16 +1824,16 @@ function drawBarra(g, item, sel) {
   for (let i = 0; i < nBales; i++) {
     const bcx = (i+.5) * bsp, bcy = h - bR * 1.05;
     // Fardo base (heno dorado)
-    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR, fill:'#c4a828', stroke:'#8a7010', 'stroke-width':'.04' }));
+    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR, fill:'#bdb47e', stroke:'#9c9468', 'stroke-width':'.04' }));
     // Anillos de enrollado
-    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.68, fill:'none', stroke:'#d4b838', 'stroke-width':'.025' }));
-    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.35, fill:'#d8c040', 'fill-opacity':'.8' }));
+    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.68, fill:'none', stroke:'#cec994', 'stroke-width':'.025' }));
+    g.appendChild(el('circle', { cx:bcx, cy:bcy, r:bR*.35, fill:'#d8d4a8', 'fill-opacity':'.8' }));
     // Radios del heno (rasgos de fibra)
     for (let a=0;a<6;a++) {
       const rad = a*Math.PI/3;
       const x1=(bcx+Math.cos(rad)*bR*.3).toFixed(2), y1=(bcy+Math.sin(rad)*bR*.3).toFixed(2);
       const x2=(bcx+Math.cos(rad)*bR*.88).toFixed(2), y2=(bcy+Math.sin(rad)*bR*.88).toFixed(2);
-      g.appendChild(el('line', { x1,y1,x2,y2, stroke:'#9a7018', 'stroke-width':'.012', 'pointer-events':'none' }));
+      g.appendChild(el('line', { x1,y1,x2,y2, stroke:'#a89e6e', 'stroke-width':'.012', 'pointer-events':'none' }));
     }
   }
 
