@@ -669,6 +669,12 @@ function drawLedStrip(g, item, sel) {
   dimEl.textContent = `${item.w} m`;
   g.appendChild(dimEl);
 
+  // Hit area: captura eventos en todo el bounding box del item
+  g.appendChild(el('rect', {
+    x: 0, y: 0, width: item.w, height: item.h,
+    fill: 'none', 'pointer-events': 'all',
+  }));
+
   if (sel) {
     g.appendChild(el('rect', {
       x: -.15, y: -.15, width: item.w + .3, height: item.h + .3,
@@ -831,6 +837,12 @@ function drawBebedero(g, item, sel) {
   });
   dimEl.textContent = `${item.w} × ${item.h} m · cervezas & hielo`;
   g.appendChild(dimEl);
+
+  // Hit area: captura eventos en todo el bounding box del item
+  g.appendChild(el('rect', {
+    x: 0, y: 0, width: item.w, height: item.h,
+    fill: 'none', 'pointer-events': 'all',
+  }));
 
   // Selection highlight
   if (sel) {
