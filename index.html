@@ -697,6 +697,7 @@ body.night .night-bloom { opacity: .58; }
           <option value="cuina">Cuina Catering</option>
           <option value="barra">Barra de fardos</option>
           <option value="living">Living Gervasioni</option>
+          <option value="texto">Texto / Referencia</option>
           <option value="otro">Otro</option>
         </select>
       </label>
@@ -781,6 +782,7 @@ const TYPES = {
   cuina:     { label: 'Cuina Catering', color: '#c8a040', fg: '#1a1000' },
   barra:     { label: 'Barra de fardos', color: '#c8b060', fg: '#1a1200' },
   living:    { label: 'Living Gervasioni', color: '#c0906c', fg: '#1a0c00' },
+  texto:     { label: 'Texto',          color: '#1a1a1a', fg: '#ffffff' },
   otro:      { label: 'Otro',          color: '#6a6a6a', fg: '#f0f0f0' },
 };
 
@@ -891,6 +893,8 @@ function buildItem(item, sel) {
     drawBarra(inner, item, sel);
   } else if (item.type === 'living') {
     drawLiving(inner, item, sel);
+  } else if (item.type === 'texto') {
+    drawTexto(inner, item, sel);
   } else {
     // Drop shadow
     inner.appendChild(el('rect', {
@@ -1592,6 +1596,52 @@ function drawCuina(g, item, sel) {
   }
 }
 
+// ─── TEXTO / REFERENCIA ───────────────────────────────────
+function drawTexto(g, item, sel) {
+  const fs  = Math.max(.28, Math.min(1.4, item.h * .82));
+  // Ancho aproximado (Courier New ≈ 0.56 × fontSize por caracter)
+  const tW  = item.label.length * fs * .56;
+  const pad = fs * .2;
+
+  // Fondo blanco semitransparente para legibilidad sobre cualquier color
+  g.appendChild(el('rect', {
+    x: -pad, y: -fs * .78,
+    width: tW + pad * 2, height: fs * 1.05,
+    fill: '#ffffff', 'fill-opacity': '.82',
+    rx: fs * .1, 'pointer-events': 'none',
+  }));
+
+  // Texto en negro oscuro
+  const txt = el('text', {
+    x: 0, y: 0,
+    'font-size': fs,
+    fill: '#0a0a0a',
+    'font-family': 'Courier New',
+    'font-weight': 'bold',
+    'letter-spacing': '.01em',
+    'pointer-events': 'none',
+  });
+  txt.textContent = item.label;
+  g.appendChild(txt);
+
+  // Hit area
+  g.appendChild(el('rect', {
+    x: -pad, y: -fs * .82,
+    width: tW + pad * 2, height: fs * 1.12,
+    fill: 'none', 'pointer-events': 'all',
+  }));
+
+  // Selección
+  if (sel) {
+    g.appendChild(el('rect', {
+      x: -pad - .08, y: -fs * .88,
+      width: tW + pad * 2 + .16, height: fs * 1.24,
+      fill: 'none', stroke: '#ffffff', 'stroke-width': '.08',
+      rx: fs * .1, 'stroke-dasharray': '.22,.14', 'pointer-events': 'none',
+    }));
+  }
+}
+
 // ─── BARRA DE FARDOS ──────────────────────────────────────
 function drawBarra(g, item, sel) {
   const w = item.w, h = item.h;
@@ -1677,64 +1727,69 @@ function drawBarra(g, item, sel) {
   }
 }
 
-// ─── LIVING GERVASIONI ────────────────────────────────────
+// ─── LIVING GERVASIONI · 4 sofás enfrentados ──────────────
 function drawLiving(g, item, sel) {
   const w = item.w, h = item.h;
   const cx = w/2, cy = h/2;
-  const ringR  = Math.min(w,h) * .38;
-  const tableR = Math.min(w,h) * .12;
-  const nChairs = 10;
-  const cW = Math.min(.34, ringR * .26); // chair seat width
-  const cH = cW * 1.25;
+  const sD  = Math.min(w, h) * .19;  // profundidad del sofá
+  const sWH = Math.min(w * .68, h * .8);  // ancho sofás horizontales
+  const sWV = Math.min(h * .68, w * .8);  // ancho sofás verticales
+  const sFill   = '#e0d8cc';
+  const sBack   = '#ccc4b6';
+  const sStroke = '#a09888';
+  const sCush   = '#ede8de';
 
-  // Sombra sutil
-  g.appendChild(el('ellipse', { cx:cx+.07, cy:cy+.09, rx:ringR+.4, ry:ringR+.35, fill:'#000', 'fill-opacity':'.12', 'pointer-events':'none' }));
+  // Sombra
+  g.appendChild(el('rect', { x:.04, y:.05, width:w, height:h, fill:'#000', 'fill-opacity':'.12', rx:'.08', 'pointer-events':'none' }));
 
-  // ── 10 SILLAS TECA (teak chairs, circular arrangement) ──
-  for (let i = 0; i < nChairs; i++) {
-    const angle = (i / nChairs) * 2 * Math.PI - Math.PI/2;
-    const chx = cx + Math.cos(angle) * ringR;
-    const chy = cy + Math.sin(angle) * ringR;
-    const deg = angle * 180 / Math.PI + 90;
+  // ── SOFÁ NORTE ──
+  const nY = sD * .2;
+  const nX = cx - sWH/2;
+  g.appendChild(el('rect', { x:nX, y:nY, width:sWH, height:sD, fill:sFill, stroke:sStroke, 'stroke-width':'.03', rx:'.07' }));
+  g.appendChild(el('rect', { x:nX, y:0, width:sWH, height:sD*.3, fill:sBack, stroke:sStroke, 'stroke-width':'.025', rx:'.05' }));  // respaldo
+  g.appendChild(el('rect', { x:nX+.04, y:nY+.04, width:sWH*.46-.04, height:sD-.08, fill:sCush, rx:'.05', 'pointer-events':'none' }));
+  g.appendChild(el('rect', { x:nX+sWH*.5+.02, y:nY+.04, width:sWH*.46-.04, height:sD-.08, fill:sCush, rx:'.05', 'pointer-events':'none' }));
 
-    const sg = el('g', { transform:`rotate(${deg.toFixed(1)},${chx.toFixed(2)},${chy.toFixed(2)})`, 'pointer-events':'none' });
-    // Asiento teca (warm wood)
-    sg.appendChild(el('rect', { x:-cW/2, y:-cH*.38, width:cW, height:cH*.52, fill:'#a07038', stroke:'#6a4a1c', 'stroke-width':'.022', rx:'.05' }));
-    // Respaldo
-    sg.appendChild(el('rect', { x:-cW/2, y:-cH*.46, width:cW, height:cH*.2, fill:'#b88040', stroke:'#7a5218', 'stroke-width':'.018', rx:'.04' }));
-    // Listones del respaldo (3 slats)
-    for (let s = 0; s < 3; s++) {
-      const sx = -cW/2 + cW*(s+1)/4;
-      sg.appendChild(el('line', { x1:sx, y1:-cH*.46, x2:sx, y2:-cH*.26, stroke:'#6a4818', 'stroke-width':'.012' }));
-    }
-    // Cojín del asiento (blanco/crema)
-    sg.appendChild(el('rect', { x:-cW*.42, y:-cH*.3, width:cW*.84, height:cH*.38, fill:'#f4f0e4', 'fill-opacity':'.9', rx:'.04' }));
-    g.appendChild(sg);
-  }
+  // ── SOFÁ SUR ──
+  const sY = h - sD - sD*.2;
+  g.appendChild(el('rect', { x:nX, y:sY, width:sWH, height:sD, fill:sFill, stroke:sStroke, 'stroke-width':'.03', rx:'.07' }));
+  g.appendChild(el('rect', { x:nX, y:sY+sD*.7, width:sWH, height:sD*.3, fill:sBack, stroke:sStroke, 'stroke-width':'.025', rx:'.05' }));
+  g.appendChild(el('rect', { x:nX+.04, y:sY+.04, width:sWH*.46-.04, height:sD-.08, fill:sCush, rx:'.05', 'pointer-events':'none' }));
+  g.appendChild(el('rect', { x:nX+sWH*.5+.02, y:sY+.04, width:sWH*.46-.04, height:sD-.08, fill:sCush, rx:'.05', 'pointer-events':'none' }));
 
-  // ── MESA CENTRAL REDONDA ──
-  g.appendChild(el('circle', { cx:cx+.05, cy:cy+.06, r:tableR, fill:'#000', 'fill-opacity':'.2', 'pointer-events':'none' }));
-  g.appendChild(el('circle', { cx, cy, r:tableR, fill:'#b8803a', stroke:'#8a5818', 'stroke-width':'.04' }));
-  g.appendChild(el('circle', { cx, cy, r:tableR*.6, fill:'none', stroke:'#c89448', 'stroke-width':'.022' }));
-  g.appendChild(el('circle', { cx, cy, r:tableR*.28, fill:'none', stroke:'#c89448', 'stroke-width':'.018' }));
-  // Copas en la mesa
-  for (const [ox,oy] of [[cx-.16,cy-.1],[cx+.12,cy+.07],[cx+.04,cy-.18]]) {
-    g.appendChild(el('circle', { cx:ox, cy:oy, r:'.038', fill:'#cce4f8', 'fill-opacity':'.88', stroke:'#90b8d8', 'stroke-width':'.014', 'pointer-events':'none' }));
-  }
+  // ── SOFÁ OESTE ──
+  const wX = sD * .2;
+  const wY = cy - sWV/2;
+  g.appendChild(el('rect', { x:wX, y:wY, width:sD, height:sWV, fill:sFill, stroke:sStroke, 'stroke-width':'.03', rx:'.07' }));
+  g.appendChild(el('rect', { x:0, y:wY, width:sD*.3, height:sWV, fill:sBack, stroke:sStroke, 'stroke-width':'.025', rx:'.05' }));
+  g.appendChild(el('rect', { x:wX+.04, y:wY+.04, width:sD-.08, height:sWV*.46-.04, fill:sCush, rx:'.05', 'pointer-events':'none' }));
+  g.appendChild(el('rect', { x:wX+.04, y:wY+sWV*.5+.02, width:sD-.08, height:sWV*.46-.04, fill:sCush, rx:'.05', 'pointer-events':'none' }));
+
+  // ── SOFÁ ESTE ──
+  const eX = w - sD - sD*.2;
+  g.appendChild(el('rect', { x:eX, y:wY, width:sD, height:sWV, fill:sFill, stroke:sStroke, 'stroke-width':'.03', rx:'.07' }));
+  g.appendChild(el('rect', { x:eX+sD*.7, y:wY, width:sD*.3, height:sWV, fill:sBack, stroke:sStroke, 'stroke-width':'.025', rx:'.05' }));
+  g.appendChild(el('rect', { x:eX+.04, y:wY+.04, width:sD-.08, height:sWV*.46-.04, fill:sCush, rx:'.05', 'pointer-events':'none' }));
+  g.appendChild(el('rect', { x:eX+.04, y:wY+sWV*.5+.02, width:sD-.08, height:sWV*.46-.04, fill:sCush, rx:'.05', 'pointer-events':'none' }));
+
+  // ── MESA DE CENTRO ──
+  const tW = sWH * .35, tH = sWV * .3;
+  g.appendChild(el('rect', { x:cx-tW/2+.04, y:cy-tH/2+.05, width:tW, height:tH, fill:'#000', 'fill-opacity':'.14', rx:'.06', 'pointer-events':'none' }));
+  g.appendChild(el('rect', { x:cx-tW/2, y:cy-tH/2, width:tW, height:tH, fill:'#b0a898', stroke:'#888078', 'stroke-width':'.025', rx:'.06' }));
+  // Reflejo cristal
+  g.appendChild(el('rect', { x:cx-tW/2+.04, y:cy-tH/2+.03, width:tW*.38, height:tH*.35, fill:'#fff', 'fill-opacity':'.18', rx:'.04', 'pointer-events':'none' }));
 
   // Label
-  const lbl = el('text', { x:cx, y:h+.36, 'text-anchor':'middle', 'font-size':'.36', fill:'#c0906c', 'font-family':'Courier New', 'fill-opacity':'.88', 'pointer-events':'none' });
+  const lbl = el('text', { x:cx, y:h+.36, 'text-anchor':'middle', 'font-size':'.34', fill:'#c0906c', 'font-family':'Courier New', 'fill-opacity':'.88', 'pointer-events':'none' });
   lbl.textContent = item.label;
   g.appendChild(lbl);
-  const dim = el('text', { x:cx, y:h+.6, 'text-anchor':'middle', 'font-size':'.28', fill:'#c0906c', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
-  dim.textContent = `${nChairs} pers · Ø${(ringR*2+cH).toFixed(1)} m`;
+  const dim = el('text', { x:cx, y:h+.58, 'text-anchor':'middle', 'font-size':'.26', fill:'#c0906c', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
+  dim.textContent = `${w} × ${h} m`;
   g.appendChild(dim);
 
-  // Hit area (circle)
-  g.appendChild(el('circle', { cx, cy, r:ringR+cH+.1, fill:'none', 'pointer-events':'all' }));
-
+  g.appendChild(el('rect', { x:0, y:0, width:w, height:h, fill:'none', 'pointer-events':'all' }));
   if (sel) {
-    g.appendChild(el('circle', { cx, cy, r:ringR+cH+.22, fill:'none', stroke:'#fff', 'stroke-width':'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
+    g.appendChild(el('rect', { x:-.12, y:-.12, width:w+.24, height:h+.24, fill:'none', stroke:'#fff', 'stroke-width':'.1', rx:'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
     for (const [hx,hy] of [[0,0],[w,0],[0,h],[w,h]])
       g.appendChild(el('rect', { x:hx-.22, y:hy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
   }
@@ -1747,7 +1802,8 @@ function itemSubLabel(it) {
   if (it.type === 'reflector') return `Ø ${it.w} m · reflector`;
   if (it.type === 'cuina')     return `${it.w} × ${it.h} m · catering`;
   if (it.type === 'barra')     return `${it.w} m · fardos`;
-  if (it.type === 'living')    return `10 pers · living`;
+  if (it.type === 'living')    return `${it.w} × ${it.h} m · living`;
+  if (it.type === 'texto')     return `etiqueta`;
   return `${it.w} × ${it.h} m`;
 }
 
@@ -2012,6 +2068,10 @@ document.getElementById('i-type').addEventListener('change', e => {
   } else if (e.target.value === 'living') {
     document.getElementById('i-w').value = 3.5;
     document.getElementById('i-h').value = 3.5;
+  } else if (e.target.value === 'texto') {
+    document.getElementById('i-w').value = 3;
+    document.getElementById('i-h').value = 0.5;
+    document.getElementById('i-label').placeholder = 'Escribe el texto aquí';
   }
 });
 
