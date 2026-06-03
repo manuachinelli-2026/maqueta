@@ -563,16 +563,53 @@ function clientToSVG(cx, cy) {
   return pt.matrixTransform(svgEl.getScreenCTM().inverse());
 }
 
+// ─── ITEM CACHE ───────────────────────────────────────────
+// Clave que representa el estado visual de un ítem (sin posición).
+// Si esta clave no cambia, el nodo SVG se reutiliza tal cual.
+const itemCache = new Map(); // id → { node, key, x, y }
+
+function itemKey(item, sel) {
+  return `${item.type}|${item.w}|${item.h}|${item.rot}|${sel?1:0}|${item.label}`;
+}
+
 // ─── RENDER ───────────────────────────────────────────────
 function render() {
-  layer.innerHTML = '';
-  for (const item of S.items) drawItem(item);
+  const seen = new Set();
+
+  for (const item of S.items) {
+    seen.add(item.id);
+    const sel   = item.id === S.selId;
+    const key   = itemKey(item, sel);
+    const cache = itemCache.get(item.id);
+
+    if (!cache || cache.key !== key) {
+      // Estado visual cambió → reconstruir nodo
+      if (cache) cache.node.remove();
+      const node = buildItem(item, sel);
+      itemCache.set(item.id, { node, key, x: item.x, y: item.y });
+    } else if (cache.x !== item.x || cache.y !== item.y) {
+      // Solo cambió la posición → actualizar transform (barato)
+      cache.node.setAttribute('transform', `translate(${item.x},${item.y})`);
+      cache.x = item.x;
+      cache.y = item.y;
+    }
+  }
+
+  // Eliminar nodos de ítems borrados
+  for (const [id, cache] of itemCache) {
+    if (!seen.has(id)) { cache.node.remove(); itemCache.delete(id); }
+  }
+
+  // Reordenar DOM para que coincida con S.items (moves baratos, no clones)
+  const frag = document.createDocumentFragment();
+  for (const item of S.items) frag.appendChild(itemCache.get(item.id).node);
+  layer.appendChild(frag);
+
   renderSidebar();
 }
 
-function drawItem(item) {
+function buildItem(item, sel) {
   const cfg = TYPES[item.type] || TYPES.otro;
-  const sel = item.id === S.selId;
   const hw  = item.w / 2;
   const hh  = item.h / 2;
 
@@ -655,7 +692,7 @@ function drawItem(item) {
     beginDrag(e.touches[0].clientX, e.touches[0].clientY, item.id);
   }, { passive: false });
 
-  layer.appendChild(outer);
+  return outer;
 }
 
 // ─── LED STRIP ────────────────────────────────────────────
@@ -1009,8 +1046,13 @@ function moveDrag(clientX, clientY) {
   if (!item) return;
   item.x = +( pt.x - drag.offX ).toFixed(2);
   item.y = +( pt.y - drag.offY ).toFixed(2);
-  const g = layer.querySelector(`[data-id="${drag.id}"]`);
-  if (g) g.setAttribute('transform', `translate(${item.x},${item.y})`);
+  // Actualizar DOM y caché directamente (sin pasar por render)
+  const cache = itemCache.get(drag.id);
+  if (cache) {
+    cache.node.setAttribute('transform', `translate(${item.x},${item.y})`);
+    cache.x = item.x;
+    cache.y = item.y;
+  }
 }
 
 function endDrag() {
