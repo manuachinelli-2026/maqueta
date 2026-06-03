@@ -703,6 +703,7 @@ body.night .night-bloom { opacity: .58; }
           <option value="living">Living Gervasioni</option>
           <option value="sanitario">Baño VIP (6.5×4 m · 5 compartimentos)</option>
           <option value="tractor">Tractor</option>
+          <option value="dj">Cabina DJ</option>
           <option value="texto">Texto / Referencia</option>
           <option value="otro">Otro</option>
         </select>
@@ -793,6 +794,7 @@ const TYPES = {
   vela:      { label: 'Vela de piso',   color: '#f0a828', fg: '#1a0800' },
   sanitario: { label: 'Baño VIP',       color: '#d4a870', fg: '#1a0e00' },
   tractor:   { label: 'Tractor',        color: '#c0392b', fg: '#fff0ee' },
+  dj:        { label: 'Cabina DJ',      color: '#7040c0', fg: '#f0e8ff' },
   texto:     { label: 'Texto',          color: '#1a1a1a', fg: '#ffffff' },
   otro:      { label: 'Otro',          color: '#6a6a6a', fg: '#f0f0f0' },
 };
@@ -916,6 +918,8 @@ function buildItem(item, sel) {
     drawSanitario(inner, item, sel);
   } else if (item.type === 'tractor') {
     drawTractor(inner, item, sel);
+  } else if (item.type === 'dj') {
+    drawDJ(inner, item, sel);
   } else {
     // Drop shadow
     inner.appendChild(el('rect', {
@@ -1496,6 +1500,7 @@ function rebuildLightLayer() {
     else if (item.type === 'bebedero')  { fill='#40b0ff'; r=item.w/2+1.0; }
     else if (item.type === 'pista' && item.lightsOn) { fill='#ffe0a0'; r=Math.max(item.w,item.h)*.8; }
     else if (item.type === 'sanitario') { fill='#ffc040'; r=item.w/2*.55; }
+    else if (item.type === 'dj')        { fill='#a060ff'; r=item.w/2*.7; }
     else if (item.type === 'cuina')     { fill='#ff8820'; r=item.w/2*.9; }
     else if (item.type === 'vela')      { fill='#ff9010'; r=Math.min(item.w,item.h)*3.5; }
     if (!fill) continue;
@@ -1681,6 +1686,278 @@ function drawLivingFardos(g, item, sel) {
     g.appendChild(el('rect', { x:-.12, y:-.12, width:w+.24, height:h+.24, fill:'none', stroke:'#fff', 'stroke-width':'.1', rx:'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
     for (const [hx,hy] of [[0,0],[w,0],[0,h],[w,h]])
       g.appendChild(el('rect', { x:hx-.22, y:hy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
+// ─── CABINA DJ (vista superior) ───────────────────────────
+function drawDJ(g, item, sel) {
+  const w = item.w, h = item.h;
+  const cx = w / 2, cy = h / 2;
+
+  // ── SOMBRA ──
+  g.appendChild(el('rect', {
+    x: .06, y: .08, width: w, height: h,
+    fill: '#000', 'fill-opacity': '.35', rx: '.1', 'pointer-events': 'none',
+  }));
+
+  // ── MESA (base negra, frontal al público = lado sur / y=h) ──
+  g.appendChild(el('rect', {
+    x: 0, y: 0, width: w, height: h,
+    fill: '#111', stroke: '#2a2a2a', 'stroke-width': '.06', rx: '.1',
+  }));
+  // Borde frontal (lista plateada hacia el público)
+  g.appendChild(el('rect', {
+    x: 0, y: h - h * .1, width: w, height: h * .1,
+    fill: '#1e1e2e', rx: '.06', 'pointer-events': 'none',
+  }));
+  g.appendChild(el('rect', {
+    x: .04, y: h - h * .1 + .02, width: w - .08, height: .025,
+    fill: '#9060e0', 'fill-opacity': '.7', 'pointer-events': 'none',
+  }));
+  // Superficie de trabajo (panel superior oscuro)
+  g.appendChild(el('rect', {
+    x: .06, y: .05, width: w - .12, height: h - h * .1 - .05,
+    fill: '#181824', rx: '.06',
+  }));
+
+  // ── Medidas internas ──
+  const padX = w * .04, padY = h * .08;
+  const iW   = w - padX * 2;
+  const iH   = h - padY * 2 - h * .1;
+  const iX   = padX, iY = padY;
+
+  // CDJ width/height (2 decks, left & right)
+  const cdjW = iW * .34, cdjH = iH * .82;
+  const cdjY = iY + iH * .09;
+  // Mixer width
+  const mixW = iW * .24;
+  const mixX = iX + cdjW + (iW - cdjW * 2 - mixW) / 2;
+
+  // ── CDJ IZQUIERDO ──
+  function drawCDJ(gx, gy, cw, ch) {
+    // Cuerpo del CDJ
+    g.appendChild(el('rect', {
+      x: gx, y: gy, width: cw, height: ch,
+      fill: '#1a1a28', stroke: '#333348', 'stroke-width': '.025', rx: '.06',
+    }));
+    // Plato (jog wheel) — círculo grande
+    const pr = Math.min(cw, ch) * .36;
+    const pcx = gx + cw * .5, pcy = gy + ch * .38;
+    g.appendChild(el('circle', {
+      cx: pcx, cy: pcy, r: pr,
+      fill: '#242438', stroke: '#404060', 'stroke-width': '.03',
+    }));
+    // Anillo exterior del plato
+    g.appendChild(el('circle', {
+      cx: pcx, cy: pcy, r: pr * .88,
+      fill: 'none', stroke: '#505070', 'stroke-width': '.018',
+    }));
+    // Líneas radiales del jog (ranuras de goma)
+    for (let r = 0; r < 16; r++) {
+      const a = r * Math.PI / 8;
+      g.appendChild(el('line', {
+        x1: (pcx + Math.cos(a) * pr * .62).toFixed(3),
+        y1: (pcy + Math.sin(a) * pr * .62).toFixed(3),
+        x2: (pcx + Math.cos(a) * pr * .85).toFixed(3),
+        y2: (pcy + Math.sin(a) * pr * .85).toFixed(3),
+        stroke: '#383858', 'stroke-width': '.012', 'pointer-events': 'none',
+      }));
+    }
+    // Centro del plato (hub metálico)
+    g.appendChild(el('circle', {
+      cx: pcx, cy: pcy, r: pr * .18,
+      fill: '#505060', stroke: '#606070', 'stroke-width': '.018',
+    }));
+    g.appendChild(el('circle', {
+      cx: pcx, cy: pcy, r: pr * .06,
+      fill: '#888898', 'pointer-events': 'none',
+    }));
+    // Display LCD (pequeño rectángulo verde/cyan arriba del plato)
+    const dH = ch * .12, dW = cw * .65;
+    g.appendChild(el('rect', {
+      x: gx + (cw - dW) / 2, y: gy + ch * .04,
+      width: dW, height: dH,
+      fill: '#002a20', stroke: '#00504a', 'stroke-width': '.018', rx: '.03',
+    }));
+    g.appendChild(el('rect', {
+      x: gx + (cw - dW) / 2 + .03, y: gy + ch * .05,
+      width: dW * .6, height: dH * .45,
+      fill: '#00c890', 'fill-opacity': '.55', rx: '.02', 'pointer-events': 'none',
+    }));
+    // Botones (fila de pequeños círculos)
+    const btnY = gy + ch * .78;
+    const nBtn = 5;
+    for (let b = 0; b < nBtn; b++) {
+      const bx = gx + cw * .12 + b * (cw * .16);
+      const bcol = b === 0 ? '#e04040' : b === 4 ? '#40a0e0' : '#444460';
+      g.appendChild(el('circle', {
+        cx: bx, cy: btnY, r: pr * .1,
+        fill: bcol, stroke: '#22222a', 'stroke-width': '.014',
+      }));
+    }
+    // Pitch fader (slider vertical derecho)
+    const pfX = gx + cw * .88, pfY1 = gy + ch * .22, pfY2 = gy + ch * .72;
+    g.appendChild(el('line', {
+      x1: pfX, y1: pfY1, x2: pfX, y2: pfY2,
+      stroke: '#404058', 'stroke-width': '.035', 'pointer-events': 'none',
+    }));
+    g.appendChild(el('rect', {
+      x: pfX - .04, y: pfY1 + (pfY2 - pfY1) * .42,
+      width: .08, height: .1,
+      fill: '#6060a0', rx: '.02',
+    }));
+  }
+
+  drawCDJ(iX, cdjY, cdjW, cdjH);
+  drawCDJ(iX + cdjW + (iW - cdjW * 2 - mixW), cdjY, cdjW, cdjH);
+
+  // ── MIXER (centro) ──
+  const mX = mixX, mY = iY, mH = iH;
+  g.appendChild(el('rect', {
+    x: mX, y: mY, width: mixW, height: mH,
+    fill: '#141420', stroke: '#2a2a40', 'stroke-width': '.025', rx: '.05',
+  }));
+  // Canales del mixer (faders verticales, 4 canales)
+  const nCh = 4, chW = mixW / nCh;
+  const CHCOLS = ['#e06040', '#40c060', '#4080e0', '#c040c0'];
+  for (let c = 0; c < nCh; c++) {
+    const fx = mX + chW * c + chW * .5;
+    const fy1 = mY + mH * .15, fy2 = mY + mH * .62;
+    // Track del fader
+    g.appendChild(el('line', {
+      x1: fx, y1: fy1, x2: fx, y2: fy2,
+      stroke: '#303048', 'stroke-width': '.03', 'pointer-events': 'none',
+    }));
+    // Cap del fader
+    const fpos = mY + mH * (.2 + c * .06);
+    g.appendChild(el('rect', {
+      x: fx - .045, y: fpos, width: .09, height: .12,
+      fill: CHCOLS[c], rx: '.025',
+    }));
+    // VU meter (pequeños rectángulos de color)
+    for (let v = 0; v < 5; v++) {
+      const vc = v < 3 ? '#20c060' : v < 4 ? '#d0c020' : '#e03020';
+      g.appendChild(el('rect', {
+        x: fx - .028, y: fy2 + .04 + v * .07,
+        width: .055, height: .055,
+        fill: vc, 'fill-opacity': v < 3 ? '.9' : '.5', rx: '.01',
+      }));
+    }
+  }
+  // Crossfader (horizontal, en la parte baja del mixer)
+  const cfY = mY + mH * .73;
+  g.appendChild(el('line', {
+    x1: mX + mixW * .1, y1: cfY, x2: mX + mixW * .9, y2: cfY,
+    stroke: '#303048', 'stroke-width': '.04', 'pointer-events': 'none',
+  }));
+  g.appendChild(el('rect', {
+    x: mX + mixW * .42, y: cfY - .05, width: mixW * .16, height: .1,
+    fill: '#a0a0c0', rx: '.03',
+  }));
+  // EQ knobs (3 hileras, 4 columnas)
+  for (let c = 0; c < nCh; c++) {
+    for (let k = 0; k < 3; k++) {
+      const kx = mX + chW * (c + .5);
+      const ky = mY + mH * (.68 + k * .065);
+      if (ky > mY + mH * .72) break;
+      g.appendChild(el('circle', {
+        cx: kx, cy: ky, r: .04,
+        fill: '#505068', stroke: '#606080', 'stroke-width': '.012',
+      }));
+      g.appendChild(el('line', {
+        x1: kx, y1: ky, x2: kx, y2: ky - .033,
+        stroke: '#9090b0', 'stroke-width': '.012', 'pointer-events': 'none',
+      }));
+    }
+  }
+
+  // ── LAPTOP (detrás del mixer, fondo de la mesa) ──
+  const ltW = mixW * 1.3, ltH = iH * .28;
+  const ltX = cx - ltW / 2, ltY = iY + iH * .68;
+  // Tapa
+  g.appendChild(el('rect', {
+    x: ltX, y: ltY, width: ltW, height: ltH,
+    fill: '#202028', stroke: '#383848', 'stroke-width': '.02', rx: '.04',
+  }));
+  // Pantalla
+  g.appendChild(el('rect', {
+    x: ltX + ltW * .06, y: ltY + ltH * .08,
+    width: ltW * .88, height: ltH * .84,
+    fill: '#0a1428', rx: '.03',
+  }));
+  // Waveform en pantalla (líneas de onda)
+  for (let wl = 0; wl < 6; wl++) {
+    const wy = ltY + ltH * (.2 + wl * .12);
+    const amp = (wl % 2 === 0 ? .8 : .5);
+    g.appendChild(el('polyline', {
+      points: `${ltX+ltW*.08},${wy} ${ltX+ltW*.2},${wy-ltH*amp*.06} ${ltX+ltW*.32},${wy+ltH*amp*.05} ${ltX+ltW*.44},${wy-ltH*amp*.07} ${ltX+ltW*.56},${wy+ltH*amp*.04} ${ltX+ltW*.68},${wy-ltH*amp*.06} ${ltX+ltW*.8},${wy+ltH*amp*.03} ${ltX+ltW*.9},${wy}`,
+      fill: 'none', stroke: '#4080ff', 'stroke-width': '.012',
+      'stroke-opacity': '.75', 'pointer-events': 'none',
+    }));
+  }
+
+  // ── LED STRIP EN EL FRENTE (borde inferior de la cabina) ──
+  const nLed = Math.round(w / .22);
+  for (let i = 0; i < nLed; i++) {
+    const lx = (i + .5) * w / nLed;
+    const ly = h - h * .055;
+    const LCOLS = ['#ff40a0', '#a040ff', '#4080ff', '#40d0ff', '#ff8040'];
+    const lcol  = LCOLS[i % LCOLS.length];
+    const delay = `${((i * .14) % 2.2).toFixed(2)}s`;
+    g.appendChild(el('circle', {
+      cx: lx, cy: ly, r: h * .025,
+      fill: lcol, filter: 'url(#filter-led)',
+      'pointer-events': 'none',
+      class: 'led-bulb',
+      style: `animation-delay:${delay}`,
+    }));
+  }
+  // Bloom del LED strip (visible en modo noche)
+  g.appendChild(el('ellipse', {
+    cx: cx, cy: h - h * .055,
+    rx: w / 2 + .4, ry: .5,
+    fill: '#a060ff', 'fill-opacity': '1',
+    filter: 'url(#filter-led-bloom)',
+    'pointer-events': 'none',
+    class: 'led-strip-bloom',
+  }));
+
+  // ── LABEL ──
+  const lbl = el('text', {
+    x: cx, y: h + .38,
+    'text-anchor': 'middle', 'font-size': '.38',
+    fill: '#9060e0', 'font-family': 'Courier New',
+    'fill-opacity': '.92', 'pointer-events': 'none',
+  });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+  const dim = el('text', {
+    x: cx, y: h + .62,
+    'text-anchor': 'middle', 'font-size': '.28',
+    fill: '#9060e0', 'font-family': 'Courier New',
+    'fill-opacity': '.5', 'pointer-events': 'none',
+  });
+  dim.textContent = `${w} × ${h} m · cabina DJ`;
+  g.appendChild(dim);
+
+  // Hit area
+  g.appendChild(el('rect', {
+    x: 0, y: 0, width: w, height: h,
+    fill: 'none', 'pointer-events': 'all',
+  }));
+
+  if (sel) {
+    g.appendChild(el('rect', {
+      x: -.12, y: -.12, width: w + .24, height: h + .24,
+      fill: 'none', stroke: '#fff', 'stroke-width': '.1',
+      rx: '.1', 'stroke-dasharray': '.32,.2', 'pointer-events': 'none',
+    }));
+    for (const [hx, hy] of [[0,0],[w,0],[0,h],[w,h]])
+      g.appendChild(el('rect', {
+        x: hx-.22, y: hy-.22, width: .44, height: .44,
+        fill: '#fff', stroke: '#4a4a4a', 'stroke-width': '.06',
+        rx: '.08', 'pointer-events': 'none',
+      }));
   }
 }
 
@@ -2477,6 +2754,7 @@ function itemSubLabel(it) {
   if (it.type === 'livingf')   return `${it.w} × ${it.h} m · fardos`;
   if (it.type === 'sanitario') return `6.5 × 4 m · Baño VIP`;
   if (it.type === 'tractor')   return `${it.w} × ${it.h} m · tractor`;
+  if (it.type === 'dj')        return `${it.w} × ${it.h} m · cabina DJ`;
   if (it.type === 'texto')     return `etiqueta`;
   return `${it.w} × ${it.h} m`;
 }
@@ -2758,6 +3036,9 @@ document.getElementById('i-type').addEventListener('change', e => {
   } else if (e.target.value === 'tractor') {
     document.getElementById('i-w').value = 3.5;
     document.getElementById('i-h').value = 2;
+  } else if (e.target.value === 'dj') {
+    document.getElementById('i-w').value = 2.5;
+    document.getElementById('i-h').value = 1.2;
   } else if (e.target.value === 'texto') {
     document.getElementById('i-w').value = 3;
     document.getElementById('i-h').value = 0.5;
