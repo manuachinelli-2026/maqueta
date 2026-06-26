@@ -703,6 +703,8 @@ body.night .night-bloom { opacity: .58; }
           <option value="sanitario">Baño VIP (6.5×4 m · 5 compartimentos)</option>
           <option value="tractor">Tractor</option>
           <option value="dj">Cabina DJ</option>
+          <option value="fardo">Fardo (1.20 × 0.80 m)</option>
+          <option value="fogonero">Fogonero (1.20 × 1.20 m · fuego)</option>
           <option value="texto">Texto / Referencia</option>
           <option value="otro">Otro</option>
         </select>
@@ -794,6 +796,8 @@ const TYPES = {
   sanitario: { label: 'Baño VIP',       color: '#d4a870', fg: '#1a0e00' },
   tractor:   { label: 'Tractor',        color: '#c0392b', fg: '#fff0ee' },
   dj:        { label: 'Cabina DJ',      color: '#7040c0', fg: '#f0e8ff' },
+  fardo:     { label: 'Fardo',          color: '#cbbd72', fg: '#1a1400' },
+  fogonero:  { label: 'Fogonero',       color: '#d2691e', fg: '#fff0e0' },
   texto:     { label: 'Texto',          color: '#1a1a1a', fg: '#ffffff' },
   otro:      { label: 'Otro',          color: '#6a6a6a', fg: '#f0f0f0' },
 };
@@ -919,6 +923,10 @@ function buildItem(item, sel) {
     drawTractor(inner, item, sel);
   } else if (item.type === 'dj') {
     drawDJ(inner, item, sel);
+  } else if (item.type === 'fardo') {
+    drawFardo(inner, item, sel);
+  } else if (item.type === 'fogonero') {
+    drawFogonero(inner, item, sel);
   } else {
     // Drop shadow
     inner.appendChild(el('rect', {
@@ -1502,6 +1510,7 @@ function rebuildLightLayer() {
     else if (item.type === 'dj')        { fill='#a060ff'; r=item.w/2*.7; }
     else if (item.type === 'cuina')     { fill='#ff8820'; r=item.w/2*.9; }
     else if (item.type === 'vela')      { fill='#ff9010'; r=Math.min(item.w,item.h)*3.5; }
+    else if (item.type === 'fogonero')  { fill='#ff7818'; r=Math.max(item.w,item.h)*2.4; }
     if (!fill) continue;
     ll.appendChild(el('circle', { cx, cy, r, fill, 'fill-opacity':'1', filter:'url(#filter-ambient)', class:'night-bloom' }));
   }
@@ -2740,6 +2749,145 @@ function drawLiving(g, item, sel) {
   }
 }
 
+// ─── FARDO (vista superior) ───────────────────────────────
+function drawFardo(g, item, sel) {
+  const w = item.w, h = item.h;
+  const horiz = w >= h;
+
+  // Sombra
+  g.appendChild(el('rect', { x:.05, y:.07, width:w, height:h, fill:'#000', 'fill-opacity':'.22', rx:'.06', 'pointer-events':'none' }));
+  // Cuerpo del fardo (paja prensada)
+  g.appendChild(el('rect', { x:0, y:0, width:w, height:h, fill:'#cbbd72', stroke:'#9c9050', 'stroke-width':'.04', rx:'.05' }));
+  // Textura de paja (líneas finas en el sentido del prensado)
+  const n = Math.max(3, Math.round((horiz ? h : w) / .1));
+  for (let i=1;i<n;i++) {
+    const t=i/n;
+    if (horiz)
+      g.appendChild(el('line', { x1:.08, y1:(t*h).toFixed(3), x2:(w-.08).toFixed(3), y2:(t*h).toFixed(3), stroke:'#b6a85a', 'stroke-width':'.012', 'stroke-opacity':'.6', 'pointer-events':'none' }));
+    else
+      g.appendChild(el('line', { x1:(t*w).toFixed(3), y1:.08, x2:(t*w).toFixed(3), y2:(h-.08).toFixed(3), stroke:'#b6a85a', 'stroke-width':'.012', 'stroke-opacity':'.6', 'pointer-events':'none' }));
+  }
+  // Brillo superior
+  g.appendChild(el('rect', { x:.06, y:.05, width:w-.12, height:Math.min(.13,h*.25), fill:'#e6da90', 'fill-opacity':'.5', rx:'.04', 'pointer-events':'none' }));
+  // Sogas / hilos que atan el fardo (2 perpendiculares al largo)
+  for (const t of [.32,.68]) {
+    if (horiz)
+      g.appendChild(el('line', { x1:(t*w).toFixed(3), y1:.03, x2:(t*w).toFixed(3), y2:(h-.03).toFixed(3), stroke:'#6a5a2c', 'stroke-width':'.045', 'pointer-events':'none' }));
+    else
+      g.appendChild(el('line', { x1:.03, y1:(t*h).toFixed(3), x2:(w-.03).toFixed(3), y2:(t*h).toFixed(3), stroke:'#6a5a2c', 'stroke-width':'.045', 'pointer-events':'none' }));
+  }
+
+  // Label + dims
+  const lbl = el('text', { x:w/2, y:h+.34, 'text-anchor':'middle', 'font-size':'.32', fill:'#cbbd72', 'font-family':'Courier New', 'fill-opacity':'.9', 'pointer-events':'none' });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+  const dim = el('text', { x:w/2, y:h+.58, 'text-anchor':'middle', 'font-size':'.25', fill:'#cbbd72', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
+  dim.textContent = `${w} × ${h} m`;
+  g.appendChild(dim);
+
+  // Hit + selección
+  g.appendChild(el('rect', { x:0, y:0, width:w, height:h, fill:'none', 'pointer-events':'all' }));
+  if (sel) {
+    g.appendChild(el('rect', { x:-.12, y:-.12, width:w+.24, height:h+.24, fill:'none', stroke:'#fff', 'stroke-width':'.1', rx:'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
+    for (const [hx,hy] of [[0,0],[w,0],[0,h],[w,h]])
+      g.appendChild(el('rect', { x:hx-.22, y:hy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
+// ─── FOGONERO (fogón con fuego animado · da luz) ──────────
+function drawFogonero(g, item, sel) {
+  const w = item.w, h = item.h;
+  const cx = w/2, cy = h/2;
+  const R  = Math.min(w, h) / 2;
+  const phase = `${((item.id || 0) % 9) * .1}s`;
+
+  // ── Bloom de calor (la fogata ilumina; muy visible de noche) ──
+  g.appendChild(el('circle', {
+    cx, cy, r: R*3.4, fill:'#ff7818', 'fill-opacity':'1',
+    filter:'url(#filter-led-bloom)', 'pointer-events':'none', class:'led-bloom',
+  }));
+
+  // Sombra
+  g.appendChild(el('circle', { cx:cx+.05, cy:cy+.06, r:R*.95, fill:'#000', 'fill-opacity':'.25', 'pointer-events':'none' }));
+
+  // Anillo / brasero metálico
+  g.appendChild(el('circle', { cx, cy, r:R*.92, fill:'#3a3632', stroke:'#1c1a17', 'stroke-width':(R*.07).toFixed(3) }));
+  // Piedras del borde
+  const stones = 12;
+  for (let i=0;i<stones;i++) {
+    const a = i/stones*Math.PI*2;
+    g.appendChild(el('circle', {
+      cx:(cx+Math.cos(a)*R*.8).toFixed(3), cy:(cy+Math.sin(a)*R*.8).toFixed(3),
+      r:(R*.16).toFixed(3), fill: i%2 ? '#6a6258' : '#564e44',
+      stroke:'#2c2820', 'stroke-width':'.02', 'pointer-events':'none',
+    }));
+  }
+  // Cuenco interior (ceniza)
+  g.appendChild(el('circle', { cx, cy, r:R*.6, fill:'#241510', 'pointer-events':'none' }));
+  // Leños cruzados
+  for (const ang of [26, -34]) {
+    g.appendChild(el('rect', {
+      x:(cx-R*.52).toFixed(3), y:(cy-R*.09).toFixed(3), width:(R*1.04).toFixed(3), height:(R*.18).toFixed(3),
+      fill:'#3a1d0d', rx:(R*.07).toFixed(3), transform:`rotate(${ang} ${cx} ${cy})`, 'pointer-events':'none',
+    }));
+  }
+  // Brasas brillantes (pulsan)
+  for (let i=0;i<3;i++) {
+    const [bx,by] = [[cx-R*.2,cy+R*.02],[cx+R*.18,cy-R*.12],[cx+R*.02,cy+R*.22]][i];
+    const ember = el('circle', { cx:bx.toFixed(3), cy:by.toFixed(3), r:(R*.12).toFixed(3), fill:'#ff5510', 'pointer-events':'none' });
+    ember.appendChild(makeSMIL('fill-opacity', '.55;1;.7;.9;.55', '.95s', `${i*.18}s`));
+    g.appendChild(ember);
+  }
+
+  // ── Llamas animadas (SMIL, fases distintas) ──
+  const flames = [[cx, cy-R*.04, R*.36],[cx-R*.22, cy+R*.06, R*.24],[cx+R*.22, cy+R*.02, R*.26]];
+  flames.forEach(([fx,fy,fr], i) => {
+    const ph = `${(i*.15).toFixed(2)}s`;
+    const flame = el('circle', { cx:fx.toFixed(3), cy:fy.toFixed(3), r:fr.toFixed(3), fill:'#ff6010', 'pointer-events':'none' });
+    flame.appendChild(makeSMIL('r', `${(fr*.82).toFixed(3)};${(fr*1.16).toFixed(3)};${(fr*.9).toFixed(3)};${(fr*1.08).toFixed(3)};${(fr*.82).toFixed(3)}`, '.7s', ph));
+    flame.appendChild(makeSMIL('fill', '#ff6010;#ffa030;#ff4008;#ff8820;#ff6010', '.7s', ph));
+    flame.appendChild(makeSMIL('cy', `${fy.toFixed(3)};${(fy-fr*.45).toFixed(3)};${fy.toFixed(3)}`, '.9s', ph));
+    g.appendChild(flame);
+    // Núcleo amarillo
+    const core = el('circle', { cx:fx.toFixed(3), cy:(fy-fr*.22).toFixed(3), r:(fr*.46).toFixed(3), fill:'#ffd84a', 'fill-opacity':'.9', 'pointer-events':'none' });
+    core.appendChild(makeSMIL('r', `${(fr*.34).toFixed(3)};${(fr*.56).toFixed(3)};${(fr*.4).toFixed(3)};${(fr*.5).toFixed(3)};${(fr*.34).toFixed(3)}`, '.6s', ph));
+    core.appendChild(makeSMIL('cy', `${(fy-fr*.22).toFixed(3)};${(fy-fr*.55).toFixed(3)};${(fy-fr*.22).toFixed(3)}`, '.8s', ph));
+    g.appendChild(core);
+  });
+  // Punta blanca caliente
+  const tip = el('circle', { cx, cy:(cy-R*.32).toFixed(3), r:(R*.12).toFixed(3), fill:'#fff6c0', 'fill-opacity':'.85', 'pointer-events':'none' });
+  tip.appendChild(makeSMIL('r', `${(R*.08).toFixed(3)};${(R*.16).toFixed(3)};${(R*.1).toFixed(3)};${(R*.14).toFixed(3)};${(R*.08).toFixed(3)}`, '.55s', phase));
+  tip.appendChild(makeSMIL('cy', `${(cy-R*.32).toFixed(3)};${(cy-R*.48).toFixed(3)};${(cy-R*.3).toFixed(3)};${(cy-R*.42).toFixed(3)};${(cy-R*.32).toFixed(3)}`, '.55s', phase));
+  g.appendChild(tip);
+
+  // Chispas que suben
+  for (let s=0;s<5;s++) {
+    const sx = cx + (s-2)*R*.16;
+    const delay = `${(s*.5).toFixed(2)}s`;
+    const sp = el('circle', { cx:sx.toFixed(3), cy:cy.toFixed(3), r:'.03', fill:'#ffcc40', 'pointer-events':'none' });
+    sp.appendChild(makeSMIL('cy', `${cy.toFixed(3)};${(cy-R*1.7).toFixed(3)}`, '2.4s', delay));
+    sp.appendChild(makeSMIL('cx', `${sx.toFixed(3)};${(sx + (s%2 ? .2 : -.2)).toFixed(3)}`, '2.4s', delay));
+    sp.appendChild(makeSMIL('opacity', '1;0', '2.4s', delay));
+    g.appendChild(sp);
+  }
+
+  // Label + dims
+  const lbl = el('text', { x:cx, y:h+.36, 'text-anchor':'middle', 'font-size':'.34', fill:'#e08840', 'font-family':'Courier New', 'fill-opacity':'.9', 'pointer-events':'none' });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+  const dim = el('text', { x:cx, y:h+.6, 'text-anchor':'middle', 'font-size':'.26', fill:'#e08840', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
+  dim.textContent = `${w} × ${h} m`;
+  g.appendChild(dim);
+
+  // Hit + selección
+  g.appendChild(el('rect', { x:0, y:0, width:w, height:h, fill:'none', 'pointer-events':'all' }));
+  if (sel) {
+    g.appendChild(el('circle', { cx, cy, r:R*.92+.18, fill:'none', stroke:'#fff', 'stroke-width':'.1', 'stroke-dasharray':'.3,.18', 'pointer-events':'none' }));
+    for (const [hx,hy] of [[0,0],[w,0],[0,h],[w,h]])
+      g.appendChild(el('rect', { x:hx-.22, y:hy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────
 function itemSubLabel(it) {
   if (it.type === 'bombita')   return `${it.w} m · tira LED`;
@@ -2754,6 +2902,8 @@ function itemSubLabel(it) {
   if (it.type === 'sanitario') return `6.5 × 4 m · Baño VIP`;
   if (it.type === 'tractor')   return `${it.w} × ${it.h} m · tractor`;
   if (it.type === 'dj')        return `${it.w} × ${it.h} m · cabina DJ`;
+  if (it.type === 'fardo')     return `${it.w} × ${it.h} m · fardo`;
+  if (it.type === 'fogonero')  return `${it.w} × ${it.h} m · fogonero`;
   if (it.type === 'texto')     return `etiqueta`;
   return `${it.w} × ${it.h} m`;
 }
@@ -3037,6 +3187,12 @@ document.getElementById('i-type').addEventListener('change', e => {
     document.getElementById('i-h').value = 2;
   } else if (e.target.value === 'dj') {
     document.getElementById('i-w').value = 2.5;
+    document.getElementById('i-h').value = 1.2;
+  } else if (e.target.value === 'fardo') {
+    document.getElementById('i-w').value = 1.2;
+    document.getElementById('i-h').value = 0.8;
+  } else if (e.target.value === 'fogonero') {
+    document.getElementById('i-w').value = 1.2;
     document.getElementById('i-h').value = 1.2;
   } else if (e.target.value === 'texto') {
     document.getElementById('i-w').value = 3;
