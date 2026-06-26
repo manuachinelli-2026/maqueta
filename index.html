@@ -705,6 +705,7 @@ body.night .night-bloom { opacity: .58; }
           <option value="dj">Cabina DJ</option>
           <option value="fardo">Fardo (1.20 × 0.80 m)</option>
           <option value="fogonero">Fogonero (1.20 × 1.20 m · fuego)</option>
+          <option value="tronco">Árbol caído / Tronco (≈5 m)</option>
           <option value="texto">Texto / Referencia</option>
           <option value="otro">Otro</option>
         </select>
@@ -798,6 +799,7 @@ const TYPES = {
   dj:        { label: 'Cabina DJ',      color: '#7040c0', fg: '#f0e8ff' },
   fardo:     { label: 'Fardo',          color: '#cbbd72', fg: '#1a1400' },
   fogonero:  { label: 'Fogonero',       color: '#d2691e', fg: '#fff0e0' },
+  tronco:    { label: 'Árbol caído',    color: '#7a5230', fg: '#f0e2d0' },
   texto:     { label: 'Texto',          color: '#1a1a1a', fg: '#ffffff' },
   otro:      { label: 'Otro',          color: '#6a6a6a', fg: '#f0f0f0' },
 };
@@ -927,6 +929,8 @@ function buildItem(item, sel) {
     drawFardo(inner, item, sel);
   } else if (item.type === 'fogonero') {
     drawFogonero(inner, item, sel);
+  } else if (item.type === 'tronco') {
+    drawTronco(inner, item, sel);
   } else {
     // Drop shadow
     inner.appendChild(el('rect', {
@@ -2888,6 +2892,83 @@ function drawFogonero(g, item, sel) {
   }
 }
 
+// ─── ÁRBOL CAÍDO / TRONCO (vista superior) ────────────────
+function drawTronco(g, item, sel) {
+  const w = item.w, h = item.h;
+  const cy = h/2;
+  // El tronco se dibuja a lo largo del eje X; afina hacia la copa.
+  const rBase = h * .5;        // radio en la base (lado de la raíz)
+  const rTip  = h * .28;       // radio en la punta (lado de la copa)
+  const x0 = h * .18;          // deja lugar para el cepellón de raíces
+  const x1 = w - h * .1;
+
+  // Sombra
+  g.appendChild(el('ellipse', { cx:(w/2+.06).toFixed(3), cy:(cy+.08).toFixed(3), rx:(w/2*.96).toFixed(3), ry:(rBase*.92).toFixed(3), fill:'#000', 'fill-opacity':'.2', 'pointer-events':'none' }));
+
+  // Cuerpo del tronco (cono truncado) con corteza
+  const body = `M ${x0} ${(cy-rBase).toFixed(3)} L ${x1} ${(cy-rTip).toFixed(3)} `
+             + `Q ${(x1+rTip*.6).toFixed(3)} ${cy} ${x1} ${(cy+rTip).toFixed(3)} `
+             + `L ${x0} ${(cy+rBase).toFixed(3)} Z`;
+  g.appendChild(el('path', { d:body, fill:'#7a5230', stroke:'#4e3014', 'stroke-width':'.05' }));
+
+  // Vetas longitudinales de la corteza
+  const grooves = 5;
+  for (let i=1;i<grooves;i++) {
+    const t = i/grooves;
+    const yB = cy - rBase + t*2*rBase;
+    const yT = cy - rTip  + t*2*rTip;
+    g.appendChild(el('line', { x1:(x0+.15).toFixed(3), y1:yB.toFixed(3), x2:(x1-.15).toFixed(3), y2:yT.toFixed(3), stroke:'#5e3c1c', 'stroke-width':'.035', 'stroke-opacity':'.7', 'pointer-events':'none' }));
+  }
+  // Brillo superior de la corteza
+  g.appendChild(el('path', { d:`M ${x0} ${(cy-rBase+.06).toFixed(3)} L ${x1} ${(cy-rTip+.05).toFixed(3)}`, fill:'none', stroke:'#9a6a40', 'stroke-width':'.06', 'stroke-opacity':'.6', 'pointer-events':'none' }));
+
+  // Corte / anillos en la punta (la copa cortada)
+  g.appendChild(el('ellipse', { cx:x1.toFixed(3), cy:cy.toFixed(3), rx:(rTip*.55).toFixed(3), ry:rTip.toFixed(3), fill:'#c79a5e', stroke:'#7a5230', 'stroke-width':'.04', 'pointer-events':'none' }));
+  for (const rr of [.72,.46,.22]) {
+    g.appendChild(el('ellipse', { cx:x1.toFixed(3), cy:cy.toFixed(3), rx:(rTip*.55*rr).toFixed(3), ry:(rTip*rr).toFixed(3), fill:'none', stroke:'#9a6a3a', 'stroke-width':'.025', 'stroke-opacity':'.7', 'pointer-events':'none' }));
+  }
+
+  // Muñones de ramas rotas (un par a los costados)
+  const stubs = [[w*.45, cy-rBase*.9, -.5], [w*.62, cy+rTip*1.05, .55]];
+  for (const [sx, sy, dir] of stubs) {
+    const len = h*.5;
+    g.appendChild(el('path', { d:`M ${sx.toFixed(3)} ${sy.toFixed(3)} l ${(len*.5).toFixed(3)} ${(len*dir).toFixed(3)}`, fill:'none', stroke:'#6a4422', 'stroke-width':(h*.16).toFixed(3), 'stroke-linecap':'round', 'pointer-events':'none' }));
+    g.appendChild(el('circle', { cx:(sx+len*.5).toFixed(3), cy:(sy+len*dir).toFixed(3), r:(h*.07).toFixed(3), fill:'#c79a5e', 'pointer-events':'none' }));
+  }
+
+  // Cepellón de raíces (base del árbol arrancado)
+  const root = el('circle', { cx:(h*.02).toFixed(3), cy:cy.toFixed(3), r:(rBase*1.15).toFixed(3), fill:'#5e3c1c', stroke:'#3c2410', 'stroke-width':'.05', 'pointer-events':'none' });
+  g.appendChild(root);
+  // Raíces que salen
+  for (let i=0;i<7;i++) {
+    const a = (-Math.PI*.62) + i*(Math.PI*1.24/6);
+    const rx0 = h*.02, ry0 = cy;
+    const rl = rBase * (.9 + (i%2)*.5);
+    g.appendChild(el('line', {
+      x1:rx0.toFixed(3), y1:ry0.toFixed(3),
+      x2:(rx0 + Math.cos(a)*rl - rBase*.4).toFixed(3), y2:(ry0 + Math.sin(a)*rl).toFixed(3),
+      stroke:'#4e3014', 'stroke-width':(h*.08).toFixed(3), 'stroke-linecap':'round', 'pointer-events':'none',
+    }));
+  }
+  g.appendChild(el('circle', { cx:(h*.02).toFixed(3), cy:cy.toFixed(3), r:(rBase*.5).toFixed(3), fill:'#3c2410', 'fill-opacity':'.7', 'pointer-events':'none' }));
+
+  // Label + dims
+  const lbl = el('text', { x:w/2, y:h+.4, 'text-anchor':'middle', 'font-size':'.36', fill:'#9a6a40', 'font-family':'Courier New', 'fill-opacity':'.9', 'pointer-events':'none' });
+  lbl.textContent = item.label;
+  g.appendChild(lbl);
+  const dim = el('text', { x:w/2, y:h+.66, 'text-anchor':'middle', 'font-size':'.27', fill:'#9a6a40', 'font-family':'Courier New', 'fill-opacity':'.5', 'pointer-events':'none' });
+  dim.textContent = `${w} × ${h} m`;
+  g.appendChild(dim);
+
+  // Hit + selección
+  g.appendChild(el('rect', { x:0, y:0, width:w, height:h, fill:'none', 'pointer-events':'all' }));
+  if (sel) {
+    g.appendChild(el('rect', { x:-.12, y:-.12, width:w+.24, height:h+.24, fill:'none', stroke:'#fff', 'stroke-width':'.1', rx:'.1', 'stroke-dasharray':'.32,.2', 'pointer-events':'none' }));
+    for (const [hx,hy] of [[0,0],[w,0],[0,h],[w,h]])
+      g.appendChild(el('rect', { x:hx-.22, y:hy-.22, width:.44, height:.44, fill:'#fff', stroke:'#4a4a4a', 'stroke-width':'.06', rx:'.08', 'pointer-events':'none' }));
+  }
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────
 function itemSubLabel(it) {
   if (it.type === 'bombita')   return `${it.w} m · tira LED`;
@@ -2904,6 +2985,7 @@ function itemSubLabel(it) {
   if (it.type === 'dj')        return `${it.w} × ${it.h} m · cabina DJ`;
   if (it.type === 'fardo')     return `${it.w} × ${it.h} m · fardo`;
   if (it.type === 'fogonero')  return `${it.w} × ${it.h} m · fogonero`;
+  if (it.type === 'tronco')    return `${it.w} m · árbol caído`;
   if (it.type === 'texto')     return `etiqueta`;
   return `${it.w} × ${it.h} m`;
 }
@@ -3194,6 +3276,9 @@ document.getElementById('i-type').addEventListener('change', e => {
   } else if (e.target.value === 'fogonero') {
     document.getElementById('i-w').value = 1.2;
     document.getElementById('i-h').value = 1.2;
+  } else if (e.target.value === 'tronco') {
+    document.getElementById('i-w').value = 5;
+    document.getElementById('i-h').value = 0.8;
   } else if (e.target.value === 'texto') {
     document.getElementById('i-w').value = 3;
     document.getElementById('i-h').value = 0.5;
