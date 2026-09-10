@@ -792,9 +792,10 @@ const labelLayer = document.getElementById('label-layer');
   slopeE.rotation.z = -eAngle;
   g.add(slopeE);
 
-  // chimenea, sobre la pared oeste (mismo terracota + remate oscuro de chapa)
-  g.add(mesh(new THREE.BoxGeometry(0.7,1.1,0.7), mat('#7a2a20',{roughness:0.9}), -w*0.28, wallH+roofH*0.6, -d*0.32));
-  g.add(mesh(new THREE.BoxGeometry(0.82,0.1,0.82), mat('#2a2825',{roughness:0.6,metalness:0.3}), -w*0.28, wallH+roofH*0.6+0.6, -d*0.32));
+  // chimenea, sobre la pared corta sur (la que se ve al lado de la galería,
+  // mismo terracota + remate oscuro de chapa)
+  g.add(mesh(new THREE.BoxGeometry(0.7,1.1,0.7), mat('#7a2a20',{roughness:0.9}), -w*0.28, wallH+roofH*0.6, -d/2+0.5));
+  g.add(mesh(new THREE.BoxGeometry(0.82,0.1,0.82), mat('#2a2825',{roughness:0.6,metalness:0.3}), -w*0.28, wallH+roofH*0.6+0.6, -d/2+0.5));
 
   // galería: piso + columnas, del lado este, mirando al lote grande
   const porchFloor = mesh(new THREE.BoxGeometry(porchDepth, 0.12, d-0.4), mat('#9a9488',{roughness:0.85}), w/2 + porchDepth/2, 0.06, 0);
@@ -815,13 +816,14 @@ const labelLayer = document.getElementById('label-layer');
   g.add(bigWin);
   scene.__casaWinMat = winMat;
 
-  // 2 ventanas nomás, en la pared oeste, después de la chimenea (mismo criterio)
+  // 2 ventanas nomás, en la pared corta lisa (la que se ve al lado de la
+  // galería), después de la chimenea
   const winMat2 = new THREE.MeshStandardMaterial({ color:'#232a30', emissive:'#ffb95c', emissiveIntensity:0, roughness:0.25, metalness:0.15 });
   const winGeo = new THREE.PlaneGeometry(1.3, 1.5);
-  for (const wz of [-d*0.05, d*0.22]) {
-    g.add(mesh(new THREE.BoxGeometry(0.08, 1.62, 1.42), frameMat, -w/2-0.015, 1.6, wz));
-    const win = mesh(winGeo, winMat2, -w/2-0.05, 1.6, wz);
-    win.rotation.y = -Math.PI/2;
+  for (const wx of [-0.6, 1.9]) {
+    g.add(mesh(new THREE.BoxGeometry(1.42, 1.62, 0.08), frameMat, wx, 1.6, -d/2-0.015));
+    const win = mesh(winGeo, winMat2, wx, 1.6, -d/2-0.05);
+    win.rotation.y = Math.PI;
     g.add(win);
   }
   scene.__casaWinMat2 = winMat2;
