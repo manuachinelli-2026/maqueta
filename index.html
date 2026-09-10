@@ -1115,11 +1115,11 @@ function buildTranquera(halfW, postH) {
   label3D('TRANQUERITA', toWX(1.6), 1.7, toWZ(10));
 })();
 
-// ── arbustos grandes y bajos a lo largo de todo el cerco norte, con huecos
-//    en las dos tranqueras ──
+// ── arbustos grandes y bajos a lo largo del cerco norte, con huecos en las
+//    dos tranqueras y sin nada en la zona de OMBÚ/GINGO/baño químico ──
 for (let x = 2; x <= 49; x += 4.3) {
   if (Math.abs(x-31.65) < 3) continue;
-  if (x > 46) continue;
+  if (x > 36) continue;
   const b = makeShrub(1.7 + Math.random()*0.3, '#3f6a20');
   b.position.set(toWX(x), 0, toWZ(2.1));
   staticGroup.add(b);
