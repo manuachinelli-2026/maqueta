@@ -805,18 +805,22 @@ const labelLayer = document.getElementById('label-layer');
     g.add(mesh(new THREE.CylinderGeometry(0.09,0.09,wallH*0.92,8), colMat, colX, wallH*0.46, cz2));
   }
 
-  // ventana grande de la galería (una sola, corrida a lo largo de la pared este)
-  const winMat = new THREE.MeshStandardMaterial({ color:'#3a2818', emissive:'#ffb95c', emissiveIntensity:0, roughness:0.4 });
-  const bigWin = mesh(new THREE.PlaneGeometry(d-3, 1.8), winMat, w/2+0.02, 1.6, 0);
+  // ventana grande de la galería (una sola, corrida a lo largo de la pared este):
+  // vidrio oscuro con marco claro, para que se lea de día y no solo brille de noche
+  const frameMat = mat('#f0ead8', { roughness: 0.6 });
+  const winMat = new THREE.MeshStandardMaterial({ color:'#232a30', emissive:'#ffb95c', emissiveIntensity:0, roughness:0.25, metalness:0.15 });
+  g.add(mesh(new THREE.BoxGeometry(0.08, 1.92, d-2.85), frameMat, w/2+0.015, 1.6, 0));
+  const bigWin = mesh(new THREE.PlaneGeometry(d-3, 1.8), winMat, w/2+0.05, 1.6, 0);
   bigWin.rotation.y = Math.PI/2;
   g.add(bigWin);
   scene.__casaWinMat = winMat;
 
-  // 2 ventanas nomás, en la pared oeste, después de la chimenea
-  const winMat2 = new THREE.MeshStandardMaterial({ color:'#3a2818', emissive:'#ffb95c', emissiveIntensity:0, roughness:0.4 });
+  // 2 ventanas nomás, en la pared oeste, después de la chimenea (mismo criterio)
+  const winMat2 = new THREE.MeshStandardMaterial({ color:'#232a30', emissive:'#ffb95c', emissiveIntensity:0, roughness:0.25, metalness:0.15 });
   const winGeo = new THREE.PlaneGeometry(1.3, 1.5);
   for (const wz of [-d*0.05, d*0.22]) {
-    const win = mesh(winGeo, winMat2, -w/2-0.02, 1.6, wz);
+    g.add(mesh(new THREE.BoxGeometry(0.08, 1.62, 1.42), frameMat, -w/2-0.015, 1.6, wz));
+    const win = mesh(winGeo, winMat2, -w/2-0.05, 1.6, wz);
     win.rotation.y = -Math.PI/2;
     g.add(win);
   }
