@@ -348,7 +348,7 @@ input:disabled { opacity: .38; cursor: not-allowed; }
           <option value="reflector">Reflector</option>
           <option value="cuina">Cuina Catering</option>
           <option value="vela">Vela de piso</option>
-          <option value="livingf">Living Fardos</option>
+          <option value="livingf">Living Gervasioni chico</option>
           <option value="barrafardos">Barra de fardos</option>
           <option value="living">Living Gervasioni</option>
           <option value="sanitario">Baño VIP (6.5×4 m · 5 compartimentos)</option>
@@ -448,13 +448,13 @@ const TYPES = {
   reflector:   { label: 'Reflector',         color: '#e8e0a0', fg: '#1a1800' },
   cuina:       { label: 'Cuina Catering',    color: '#c8a040', fg: '#1a1000' },
   barrafardos: { label: 'Barra de fardos',   color: '#c8b060', fg: '#1a1200' },
-  living:      { label: 'Living Gervasioni', color: '#c0906c', fg: '#1a0c00' },
-  livingf:     { label: 'Living Fardos',     color: '#bdb47e', fg: '#1a1000' },
+  living:      { label: 'Living Gervasioni', color: '#e8e4d6', fg: '#1a1810' },
+  livingf:     { label: 'Living Gervasioni chico', color: '#e8e4d6', fg: '#1a1810' },
   vela:        { label: 'Vela de piso',      color: '#f0a828', fg: '#1a0800' },
   sanitario:   { label: 'Baño VIP',          color: '#d4a870', fg: '#1a0e00' },
   tractor:     { label: 'Tractor',           color: '#c0392b', fg: '#fff0ee' },
   dj:          { label: 'Cabina DJ',         color: '#7040c0', fg: '#f0e8ff' },
-  fardo:       { label: 'Fardo',             color: '#b89a52', fg: '#1a1400' },
+  fardo:       { label: 'Fardo',             color: '#c7a13e', fg: '#1a1400' },
   fogonero:    { label: 'Fogonero',          color: '#d2691e', fg: '#fff0e0' },
   tronco:      { label: 'Árbol caído',       color: '#7a5230', fg: '#f0e2d0' },
   rondafardos: { label: 'Ronda de fardos',   color: '#cbbd72', fg: '#1a1400' },
@@ -757,8 +757,10 @@ function label3D(text, x, y, z, cls) {
 const staticLabels = [];
 const labelLayer = document.getElementById('label-layer');
 
-// ── CASA · estilo estancia: paredes terracota, techo chapa verde, galería
-//    mirando al lote grande (lado norte, -Z local), 2 ventanas al final ──
+// ── CASA · estilo estancia: paredes terracota, techo chapa. La galería larga
+//    (con la ventana grande) va sobre la pared este, mirando al lote grande;
+//    el lado oeste (hacia la entrada/álamos) es el costado corto con la
+//    chimenea y las 2 ventanas. Ridge del techo corre en Z (eje largo) ──
 (function buildCasa() {
   const w = 10, d = 15, wallH = 3.0, roofH = 1.9;
   const porchDepth = 2.4;
@@ -773,43 +775,50 @@ const labelLayer = document.getElementById('label-layer');
   g.add(mesh(new THREE.BoxGeometry(w+0.06, 0.3, d+0.06), trimMat, 0, 0.15, 0));
 
   const roofMat = mat('#8f9088', { roughness: 0.5, metalness: 0.35 });
-  const slopeLen = Math.hypot(d/2, roofH);
-  const slopeGeo = new THREE.BoxGeometry(w+0.6, 0.12, slopeLen);
+  const slopeLen = Math.hypot(w/2, roofH);
 
-  // paño trasero (sur, corto)
-  const slopeS = mesh(slopeGeo, roofMat);
-  slopeS.position.set(0, wallH + roofH/2, d/4);
-  slopeS.rotation.x = Math.atan2(roofH, d/2);
-  g.add(slopeS);
+  // paño oeste (corto, sin galería): cae hacia la pared con la chimenea
+  const slopeW = mesh(new THREE.BoxGeometry(slopeLen, 0.12, d+0.6), roofMat);
+  slopeW.position.set(-w/4, wallH + roofH/2, 0);
+  slopeW.rotation.z = Math.atan2(roofH, w/2);
+  g.add(slopeW);
 
-  // paño delantero (norte) extendido: cubre también la galería que mira al lote
-  const slopeN = mesh(new THREE.BoxGeometry(w+0.6, 0.12, slopeLen + porchDepth*1.35), roofMat);
-  const nAngle = Math.atan2(roofH*0.72, d/2 + porchDepth);
-  slopeN.position.set(0, wallH + (roofH*0.72)/2, -(d/4 + porchDepth*0.55));
-  slopeN.rotation.x = -nAngle;
-  g.add(slopeN);
+  // paño este extendido: cubre la galería que mira al lote grande
+  const eAngle = Math.atan2(roofH*0.72, w/2 + porchDepth);
+  const slopeE = mesh(new THREE.BoxGeometry(slopeLen + porchDepth*1.35, 0.12, d+0.6), roofMat);
+  slopeE.position.set(w/4 + porchDepth*0.55, wallH + (roofH*0.72)/2, 0);
+  slopeE.rotation.z = -eAngle;
+  g.add(slopeE);
 
-  // chimenea (mismo terracota de la pared + remate oscuro de chapa)
-  g.add(mesh(new THREE.BoxGeometry(0.7,1.1,0.7), mat('#7a2a20',{roughness:0.9}), w*0.28, wallH+roofH*0.75, d*0.1));
-  g.add(mesh(new THREE.BoxGeometry(0.82,0.1,0.82), mat('#2a2825',{roughness:0.6,metalness:0.3}), w*0.28, wallH+roofH*0.75+0.6, d*0.1));
+  // chimenea, sobre la pared oeste (mismo terracota + remate oscuro de chapa)
+  g.add(mesh(new THREE.BoxGeometry(0.7,1.1,0.7), mat('#7a2a20',{roughness:0.9}), -w*0.28, wallH+roofH*0.6, -d*0.32));
+  g.add(mesh(new THREE.BoxGeometry(0.82,0.1,0.82), mat('#2a2825',{roughness:0.6,metalness:0.3}), -w*0.28, wallH+roofH*0.6+0.6, -d*0.32));
 
-  // galería: piso + columnas, del lado norte (-Z), mirando al lote grande
-  const porchFloor = mesh(new THREE.BoxGeometry(w-0.4, 0.12, porchDepth), mat('#9a9488',{roughness:0.85}), 0, 0.06, -(d/2 + porchDepth/2));
+  // galería: piso + columnas, del lado este, mirando al lote grande
+  const porchFloor = mesh(new THREE.BoxGeometry(porchDepth, 0.12, d-0.4), mat('#9a9488',{roughness:0.85}), w/2 + porchDepth/2, 0.06, 0);
   g.add(porchFloor);
   const colMat = mat('#2a2825', { roughness: 0.6, metalness: 0.2 });
-  for (const cx2 of [-w/2+0.5, 0, w/2-0.5]) {
-    g.add(mesh(new THREE.CylinderGeometry(0.09,0.09,wallH*0.92,8), colMat, cx2, wallH*0.46, -(d/2+porchDepth-0.15)));
+  const colX = w/2 + porchDepth - 0.15;
+  for (const cz2 of [-d/2+1.2, -d/6, d/6, d/2-1.2]) {
+    g.add(mesh(new THREE.CylinderGeometry(0.09,0.09,wallH*0.92,8), colMat, colX, wallH*0.46, cz2));
   }
 
-  // 2 ventanas nomás, juntas en un extremo de la pared de la galería
+  // ventana grande de la galería (una sola, corrida a lo largo de la pared este)
   const winMat = new THREE.MeshStandardMaterial({ color:'#3a2818', emissive:'#ffb95c', emissiveIntensity:0, roughness:0.4 });
-  const winGeo = new THREE.PlaneGeometry(1.4, 1.6);
-  for (const wx of [1.0, 3.3]) {
-    const win = mesh(winGeo, winMat, wx, 1.6, -d/2-0.02);
-    win.rotation.y = Math.PI;
+  const bigWin = mesh(new THREE.PlaneGeometry(d-3, 1.8), winMat, w/2+0.02, 1.6, 0);
+  bigWin.rotation.y = Math.PI/2;
+  g.add(bigWin);
+  scene.__casaWinMat = winMat;
+
+  // 2 ventanas nomás, en la pared oeste, después de la chimenea
+  const winMat2 = new THREE.MeshStandardMaterial({ color:'#3a2818', emissive:'#ffb95c', emissiveIntensity:0, roughness:0.4 });
+  const winGeo = new THREE.PlaneGeometry(1.3, 1.5);
+  for (const wz of [-d*0.05, d*0.22]) {
+    const win = mesh(winGeo, winMat2, -w/2-0.02, 1.6, wz);
+    win.rotation.y = -Math.PI/2;
     g.add(win);
   }
-  scene.__casaWinMat = winMat;
+  scene.__casaWinMat2 = winMat2;
 
   staticGroup.add(g);
   label3D('CASA', cx, wallH+roofH+0.6, cz);
@@ -985,6 +994,51 @@ function hayBale(halfSize, length, color) {
   return g;
 }
 
+// living Gervasoni: sillón blanco/perla bajo, con almohadón grueso y respaldo
+// bajo curvo, sobre marco de aluminio claro (línea InOut) — de "ancho"
+// variable para armar sillones simples (~0.75m) o dobles (~1.3m).
+function gervasoniSeat(width) {
+  const g = new THREE.Group();
+  const depth = 0.82, seatH = 0.36;
+  const frameMat = mat('#cdc8b6', { roughness: 0.45, metalness: 0.2 });
+  const cushionMat = mat('#ece8dd', { roughness: 0.6 });
+  g.add(mesh(new THREE.BoxGeometry(width, 0.06, depth), frameMat, 0, 0.3, 0));
+  g.add(mesh(new THREE.BoxGeometry(width-0.05, 0.2, depth-0.06), cushionMat, 0, seatH, 0.01));
+  g.add(mesh(new THREE.BoxGeometry(width-0.05, 0.3, 0.14), cushionMat, 0, seatH+0.16, -depth/2+0.08));
+  for (const lx of [-width/2+0.07, width/2-0.07]) for (const lz of [-depth/2+0.07, depth/2-0.07]) {
+    g.add(mesh(new THREE.CylinderGeometry(0.018,0.018,0.3,6), frameMat, lx, 0.15, lz));
+  }
+  return g;
+}
+
+function gervasoniTable(size) {
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.CylinderGeometry(size/2, size/2, 0.04, 24), mat('#efece0',{roughness:0.4}), 0, 0.34, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.025,0.025,0.32,8), mat('#cdc8b6',{roughness:0.5,metalness:0.2}), 0, 0.18, 0));
+  g.add(mesh(new THREE.CylinderGeometry(size*0.42,size*0.42,0.02,24), mat('#cdc8b6',{roughness:0.5,metalness:0.2}), 0, 0.02, 0));
+  return g;
+}
+
+// arma un living Gervasoni completo: 2 sillones dobles + 4 simples alrededor
+// de una mesa baja, todo blanco/perla — mismo mueble real para 'living' y
+// 'livingf' (las dos entradas de "living" del panel).
+function gervasoniLiving(w, h) {
+  const g = new THREE.Group();
+  const seq = [1.3, 0.75, 0.75, 1.3, 0.75, 0.75];
+  const rx = Math.max(w/2*0.7, 1.3), rz = Math.max(h/2*0.7, 1.3);
+  for (let i = 0; i < seq.length; i++) {
+    const a = (i/seq.length) * Math.PI*2;
+    const seat = gervasoniSeat(seq[i]);
+    const px = Math.cos(a)*rx, pz = Math.sin(a)*rz;
+    seat.position.set(px, 0, pz);
+    seat.lookAt(0, 0, 0);
+    seat.rotation.y += Math.PI;
+    g.add(seat);
+  }
+  g.add(gervasoniTable(Math.min(w,h)*0.34));
+  return g;
+}
+
 const flickerMats = []; // { m, base, speed, phase, prop }
 function registerFlicker(m, base, speed, prop) {
   flickerMats.push({ m, base, speed, phase: Math.random()*10, prop: prop || 'emissiveIntensity' });
@@ -1132,29 +1186,10 @@ function buildItemMesh(item) {
       g.userData.lights = [pl];
       break;
     }
-    case 'livingf': {
-      const bales = Math.max(3, Math.round((w*h)/1.6));
-      for (let i=0;i<bales;i++) {
-        const a = (i/bales)*Math.PI*2;
-        const b = hayBale(0.4, 0.9, TYPES.fardo.color);
-        b.position.set(Math.cos(a)*w*0.32, 0, Math.sin(a)*h*0.32);
-        b.rotation.y = a;
-        g.add(b);
-      }
-      break;
-    }
+    case 'livingf':
     case 'living': {
-      const sofaMat = mat(cfg.color, { roughness: 0.7 });
-      const seats = [[0,-h/2+0.35,w,0.6,0],[-w/2+0.35,0,0.6,h,Math.PI/2],[w/2-0.35,0,0.6,h,Math.PI/2]];
-      for (const [sx,sz,sw,sd,rot] of seats) {
-        const s = mesh(new THREE.BoxGeometry(sw,0.42,sd*0.55), sofaMat, sx,0.21,sz);
-        s.rotation.y = rot; g.add(s);
-        const back = mesh(new THREE.BoxGeometry(sw,0.5,0.14), sofaMat);
-        back.position.copy(s.position); back.position.y = 0.5;
-        back.rotation.y = rot;
-        back.translateZ(-sd*0.28);
-        g.add(back);
-      }
+      // living Gervasoni real: 2 sillones dobles + 4 simples blancos + mesa
+      g.add(gervasoniLiving(w, h));
       break;
     }
     case 'sanitario': {
@@ -1709,6 +1744,7 @@ function animate() {
     nl.light.intensity = nl.intensity * flick * (0.92 + Math.sin(t*6 + nl.light.id)*0.08);
   }
   scene.__casaWinMat && (scene.__casaWinMat.emissiveIntensity = nightT * 1.4);
+  scene.__casaWinMat2 && (scene.__casaWinMat2.emissiveIntensity = nightT * 1.4);
 
   for (const f of flickerMats) {
     const flick = 0.85 + Math.sin(t*f.speed + f.phase)*0.15;
