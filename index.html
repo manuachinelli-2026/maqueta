@@ -695,6 +695,108 @@ function makeTree(canopyR, trunkH, canopyColor, style) {
   return g;
 }
 
+// higuera real: tronco bajo que se abre en 2-3 ramas cerca del piso y copa
+// ancha y baja (la de campo está caída, así que las hojas casi tocan el piso)
+function makeFig(canopyR, trunkH, canopyColor) {
+  const g = new THREE.Group();
+  const barkMat = mat('#5a4530', { roughness: 0.95 });
+  g.add(mesh(new THREE.CylinderGeometry(canopyR*0.11, canopyR*0.17, trunkH, 6), barkMat, 0, trunkH/2, 0));
+  for (let i = 0; i < 3; i++) {
+    const a = (i/3)*Math.PI*2 + 0.4;
+    const branch = mesh(new THREE.CylinderGeometry(canopyR*0.05, canopyR*0.09, trunkH*0.95, 6), barkMat);
+    branch.position.set(Math.cos(a)*canopyR*0.14, trunkH*0.6, Math.sin(a)*canopyR*0.14);
+    branch.rotation.z = Math.cos(a)*0.55;
+    branch.rotation.x = Math.sin(a)*0.55;
+    g.add(branch);
+  }
+  const blobs = 9;
+  for (let i = 0; i < blobs; i++) {
+    const a = (i/blobs)*Math.PI*2;
+    const r = canopyR * (0.5 + Math.random()*0.28);
+    const bx = Math.cos(a)*canopyR*0.44, bz = Math.sin(a)*canopyR*0.44;
+    const by = trunkH*0.62 + r*0.5;
+    const c = new THREE.Color(canopyColor).offsetHSL(0, 0, (Math.random()-0.5)*0.06);
+    g.add(mesh(new THREE.IcosahedronGeometry(r, 0), mat(c, { roughness: 0.9 }), bx, by, bz));
+  }
+  g.add(mesh(new THREE.IcosahedronGeometry(canopyR*0.72, 0), mat(canopyColor, { roughness: 0.9 }), 0, trunkH*0.62+canopyR*0.5, 0));
+  return g;
+}
+
+// álamo real: columna angosta y alta de follaje apilado, casi sin copa ancha
+function makePoplar(height, canopyR, canopyColor) {
+  const g = new THREE.Group();
+  const trunkH = height * 0.16;
+  g.add(mesh(new THREE.CylinderGeometry(canopyR*0.16, canopyR*0.22, trunkH, 6), mat('#4a3a26',{roughness:0.95}), 0, trunkH/2, 0));
+  const blobs = 9;
+  for (let i = 0; i < blobs; i++) {
+    const t = i/(blobs-1);
+    const by = trunkH + t*(height-trunkH*1.1);
+    const r = canopyR * (0.5 + 0.5*Math.sin(t*Math.PI));
+    const bx = (Math.random()-0.5)*canopyR*0.22, bz = (Math.random()-0.5)*canopyR*0.22;
+    const c = new THREE.Color(canopyColor || '#4d7a2a').offsetHSL(0, 0, (Math.random()-0.5)*0.05);
+    g.add(mesh(new THREE.IcosahedronGeometry(r, 0), mat(c, { roughness: 0.9 }), bx, by, bz));
+  }
+  return g;
+}
+
+// enredadera desprolija trepando un palo (columna de la galería)
+function vineOnPost(radius, height, color) {
+  const g = new THREE.Group();
+  const leafMat = mat(color, { roughness: 0.9 });
+  const n = 16;
+  for (let i = 0; i < n; i++) {
+    const t = i/n;
+    const a = t*Math.PI*5;
+    const y = 0.15 + t*height*0.85;
+    const r = radius + 0.05;
+    g.add(mesh(new THREE.IcosahedronGeometry(0.045+Math.random()*0.04,0), leafMat, Math.cos(a)*r, y, Math.sin(a)*r));
+  }
+  // un par de brotes sueltos colgando, para que no quede prolijo
+  for (let k = 0; k < 2; k++) {
+    const by = height*(0.45+Math.random()*0.3);
+    for (let j = 0; j < 4; j++) {
+      g.add(mesh(new THREE.IcosahedronGeometry(0.038,0), leafMat, radius+0.1+Math.random()*0.06, by-j*0.11, (Math.random()-0.5)*0.15));
+    }
+  }
+  return g;
+}
+
+// cantero desprolijo con flores mixtas y alguna enredadera escapándose por el piso
+function flowerBed(length) {
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.BoxGeometry(length, 0.22, 0.5), mat('#4a3a28',{roughness:1}), 0, 0.11, 0));
+  const flowerColors = ['#e8a0c0','#f0d060','#eeeee2','#c86048'];
+  const n = Math.round(length*3.2);
+  for (let i = 0; i < n; i++) {
+    const fx = -length/2 + Math.random()*length, fz = (Math.random()-0.5)*0.4;
+    const isLeaf = Math.random() > 0.45;
+    const col = isLeaf ? '#4a6a2a' : flowerColors[Math.floor(Math.random()*flowerColors.length)];
+    g.add(mesh(new THREE.IcosahedronGeometry(0.06+Math.random()*0.08,0), mat(col,{roughness:0.85}), fx, 0.22+Math.random()*0.22, fz));
+  }
+  const vineMat = mat('#3f6a1e', { roughness: 0.9 });
+  for (let k = 0; k < 3; k++) {
+    const vx = -length/2 + Math.random()*length;
+    for (let j = 0; j < 5; j++) {
+      g.add(mesh(new THREE.IcosahedronGeometry(0.035,0), vineMat, vx+(Math.random()-0.5)*0.5, 0.05, 0.3+j*0.18+Math.random()*0.1));
+    }
+  }
+  return g;
+}
+
+// arbusto bajo, más ancho que alto, denso — para el jardín cerca de la casa
+function makeShrub(canopyR, color) {
+  const g = new THREE.Group();
+  const blobs = 6;
+  for (let i = 0; i < blobs; i++) {
+    const a = (i/blobs)*Math.PI*2;
+    const r = canopyR * (0.55 + Math.random()*0.3);
+    const c = new THREE.Color(color).offsetHSL(0, 0, (Math.random()-0.5)*0.06);
+    g.add(mesh(new THREE.IcosahedronGeometry(r,0), mat(c,{roughness:0.92}), Math.cos(a)*canopyR*0.42, r*0.6, Math.sin(a)*canopyR*0.42));
+  }
+  g.add(mesh(new THREE.IcosahedronGeometry(canopyR*0.62,0), mat(color,{roughness:0.92}), 0, canopyR*0.55, 0));
+  return g;
+}
+
 function makePerson() {
   const g = new THREE.Group();
   const body = mesh(new THREE.CylinderGeometry(0.09,0.12,0.55,6), mat('#141414',{roughness:1}), 0,0.30,0);
@@ -804,6 +906,10 @@ const labelLayer = document.getElementById('label-layer');
   const colX = w/2 + porchDepth - 0.15;
   for (const cz2 of [-d/2+1.2, -d/6, d/6, d/2-1.2]) {
     g.add(mesh(new THREE.CylinderGeometry(0.09,0.09,wallH*0.92,8), colMat, colX, wallH*0.46, cz2));
+    // enredadera desprolija trepando el palo de la galería
+    const vine = vineOnPost(0.09, wallH*0.92, '#3f6a1e');
+    vine.position.set(colX, 0, cz2);
+    g.add(vine);
   }
 
   // ventana grande de la galería (una sola, corrida a lo largo de la pared este):
@@ -828,17 +934,22 @@ const labelLayer = document.getElementById('label-layer');
   }
   scene.__casaWinMat2 = winMat2;
 
+  // cantero desprolijo con flores y enredaderas, al pie de las ventanas
+  const bed = flowerBed(4.2);
+  bed.position.set(0.6, 0, -d/2-0.35);
+  g.add(bed);
+
   staticGroup.add(g);
   label3D('CASA', cx, wallH+roofH+0.6, cz);
 })();
 
-// ── HIGUERA (Ø5.5m) · diciembre = verde y frondosa ──
+// ── HIGUERA (Ø ~6m) · caída, la copa llega casi al piso · 15% más cerca del alambre ──
 staticGroup.add((() => {
-  const t = makeTree(2.7, 1.0, '#3e7a1c', 'lush');
-  t.position.set(toWX(27.8), 0, toWZ(12.1));
+  const t = makeFig(3.1, 0.6, '#3e7a1c');
+  t.position.set(toWX(27.8), 0, toWZ(10.3));
   return t;
 })());
-label3D('HIGUERA · Ø 5.5 M', toWX(27.8), 4.8, toWZ(12.1));
+label3D('HIGUERA · Ø 6 M', toWX(27.8), 3.6, toWZ(10.3));
 
 // ── GINGO ──
 staticGroup.add((() => { const t = makeTree(1.5,1.2,'#3a6c18'); t.position.set(toWX(47.5),0,toWZ(2.2)); return t; })());
@@ -848,9 +959,9 @@ label3D('GINGO', toWX(47.5), 3.6, toWZ(2.2));
 staticGroup.add((() => { const t = makeTree(1.2,0.7,'#356012'); t.position.set(toWX(42.5),0,toWZ(2.3)); return t; })());
 label3D('OMBÚ', toWX(42.5), 3.0, toWZ(2.3));
 
-// ── ÁLAMOS este (fila) ──
+// ── ÁLAMOS este (fila) · columnas angostas y altas, como en la foto real ──
 for (let y = 3; y <= 43; y += 4) {
-  const t = makeTree(0.62, 4.3, '#3c6018', 'tall');
+  const t = makePoplar(5.2, 0.5, '#4d7a2a');
   t.position.set(toWX(53), 0, toWZ(y));
   staticGroup.add(t);
 }
@@ -877,9 +988,9 @@ label3D('ÁLAMOS · E', toWX(55), 6.3, toWZ(22));
   label3D('TRANQUERA', toWX(52.75), 2.1, toWZ(1.6));
 })();
 
-// ── árboles oeste ──
+// ── árboles oeste (álamos) ──
 for (let y = 6; y <= 26; y += 4) {
-  const t = makeTree(0.55, 2.6, '#456a20');
+  const t = makePoplar(3.6, 0.42, '#4d7a2a');
   t.position.set(toWX(1), 0, toWZ(y));
   staticGroup.add(t);
 }
@@ -935,8 +1046,16 @@ staticGroup.add(fenceRun(toWX(0),toWZ(44), toWX(54),toWZ(44), 4));
 staticGroup.add(fenceRun(toWX(0),toWZ(0), toWX(0),toWZ(44), 4));
 staticGroup.add(fenceRun(toWX(54),toWZ(0), toWX(54),toWZ(44), 4));
 
+// ── arbusto bajo en el jardín cerca de la casa (donde antes había una
+//    persona de referencia que se leía como un palito) ──
+staticGroup.add((() => {
+  const s = makeShrub(1.1, '#3f6a1e');
+  s.position.set(toWX(15), 0, toWZ(25));
+  return s;
+})());
+
 // ── gente de referencia ──
-const peoplePositions = [[10,20],[15,25],[40,10],[35,30],[20,15],[45,25],[8,35]];
+const peoplePositions = [[10,20],[40,10],[35,30],[20,15],[45,25],[8,35]];
 for (const [x,y] of peoplePositions) {
   const p = makePerson();
   p.position.set(toWX(x), 0, toWZ(y));
@@ -1098,22 +1217,69 @@ function buildItemMesh(item) {
       }
       break;
     }
-    case 'comida': case 'cuina': {
-      if (item.type === 'cuina') {
-        const wallH = 1.9;
-        g.add(mesh(new THREE.BoxGeometry(w, wallH, h), mat('#e8e0cc',{roughness:0.8,transparent:true,opacity:0.22}), 0, wallH/2, 0));
-        const roofGeo = new THREE.ConeGeometry(Math.hypot(w,h)/2*0.72, 1.3, 4);
-        const roof = mesh(roofGeo, mat(cfg.color,{roughness:0.7}), 0, wallH+0.65, 0);
-        roof.rotation.y = Math.PI/4;
-        g.add(roof);
-      } else {
-        for (let i=0;i<3;i++) {
-          const tw = Math.min(w, 1.3), th = h*0.8;
-          g.add(mesh(new THREE.BoxGeometry(tw, 0.05, th), mat('#e8e0cc',{roughness:0.6}), -w/2+tw/2+i*(w/3), 0.85, 0));
-          g.add(mesh(new THREE.CylinderGeometry(0.04,0.04,0.85,6), legMat, -w/2+tw/2+i*(w/3), 0.42, th/2-0.1));
-          g.add(mesh(new THREE.CylinderGeometry(0.04,0.04,0.85,6), legMat, -w/2+tw/2+i*(w/3), 0.42, -th/2+0.1));
+    case 'comida': {
+      for (let i=0;i<3;i++) {
+        const tw = Math.min(w, 1.3), th = h*0.8;
+        g.add(mesh(new THREE.BoxGeometry(tw, 0.05, th), mat('#e8e0cc',{roughness:0.6}), -w/2+tw/2+i*(w/3), 0.85, 0));
+        g.add(mesh(new THREE.CylinderGeometry(0.04,0.04,0.85,6), legMat, -w/2+tw/2+i*(w/3), 0.42, th/2-0.1));
+        g.add(mesh(new THREE.CylinderGeometry(0.04,0.04,0.85,6), legMat, -w/2+tw/2+i*(w/3), 0.42, -th/2+0.1));
+      }
+      break;
+    }
+    case 'cuina': {
+      // catering al aire libre, sin techo: mostrador largo con mantel oscuro,
+      // rack rústico con lucecitas cálidas, islas de apoyo, un fueguito,
+      // matas desprolijas con algún fruto rojo y carteles de menú de pie
+      const counterMat = mat('#1c1c1c', { roughness: 0.75 });
+      const topMat = mat('#242220', { roughness: 0.6 });
+      const woodMat = mat('#5a4028', { roughness: 0.9 });
+      const legMat2 = mat('#141414', { roughness: 0.85 });
+      const depth = Math.min(h, 0.9);
+
+      g.add(mesh(new THREE.BoxGeometry(w, 0.85, depth), counterMat, 0, 0.42, -h/2+depth/2));
+      g.add(mesh(new THREE.BoxGeometry(w+0.06, 0.05, depth+0.06), topMat, 0, 0.85, -h/2+depth/2));
+
+      const rackZ = -h/2 - 0.15, rackH = 1.7;
+      for (const rx of [-w/2+0.3, w/2-0.3]) {
+        g.add(mesh(new THREE.CylinderGeometry(0.04,0.05,rackH,6), woodMat, rx, rackH/2, rackZ));
+      }
+      const beam = mesh(new THREE.CylinderGeometry(0.03,0.03,w-0.4,6), woodMat, 0, rackH, rackZ);
+      beam.rotation.z = Math.PI/2;
+      g.add(beam);
+      const nBulbs = Math.max(4, Math.round(w/0.8));
+      for (let i=0;i<=nBulbs;i++) {
+        const bx = -w/2+0.3 + (w-0.6)*i/nBulbs;
+        const bMat = new THREE.MeshStandardMaterial({ color:'#2a2010', emissive:'#ffc878', emissiveIntensity:0 });
+        registerFlicker(bMat, 0.85, 4+(i%3));
+        g.add(mesh(new THREE.SphereGeometry(0.045,6,6), bMat, bx, rackH-0.15, rackZ));
+      }
+
+      for (const ix of [-w*0.28, w*0.22]) {
+        g.add(mesh(new THREE.BoxGeometry(0.9,0.72,0.6), counterMat, ix, 0.36, h*0.18));
+        g.add(mesh(new THREE.BoxGeometry(0.95,0.04,0.65), topMat, ix, 0.73, h*0.18));
+      }
+
+      const flameMat = new THREE.MeshStandardMaterial({ color:'#ff6018', emissive:'#ff8028', emissiveIntensity:1.3 });
+      registerFlicker(flameMat, 1.3, 9);
+      g.add(mesh(new THREE.ConeGeometry(0.14,0.34,7), flameMat, w/2-0.4, 0.62, h*0.15));
+      const cookPl = addNightLight(new THREE.PointLight(0xff7020, 0, 3, 2), 1.1);
+      cookPl.position.set(w/2-0.4, 0.7, h*0.15);
+      cookPl.userData.alwaysOn = true;
+
+      for (const sx of [-w/2+0.35, w/2-0.35]) {
+        const bush = makeShrub(0.5, '#4a6a24');
+        bush.position.set(sx, 0, h/2-0.1);
+        g.add(bush);
+        for (let k=0;k<4;k++) {
+          g.add(mesh(new THREE.SphereGeometry(0.03,5,5), mat('#b02818',{roughness:0.5}), sx+(Math.random()-0.5)*0.4, 0.35+Math.random()*0.3, h/2-0.1+(Math.random()-0.5)*0.3));
         }
       }
+
+      for (const sx2 of [w*0.02, w*0.02+0.5]) {
+        g.add(mesh(new THREE.CylinderGeometry(0.015,0.015,1.1,6), legMat2, sx2, 0.55, h/2+0.35));
+        g.add(mesh(new THREE.BoxGeometry(0.28,0.4,0.02), mat('#181818',{roughness:0.5}), sx2, 1.05, h/2+0.35));
+      }
+      g.userData.lights = [cookPl];
       break;
     }
     case 'deco': {
@@ -1696,7 +1862,7 @@ document.getElementById('i-type').addEventListener('change', e => {
     (TYPES[e.target.value]?.label || '') + ' 1';
   const dims = {
     bebedero:[7,1.0], bombita:[10,0.25], reflector:[0.5,0.5], pista:[6,6],
-    mesaimp:[3,1], cuina:[8,8], barra:[4,1.2], barrafardos:[4,1.2], living:[3.5,3.5],
+    mesaimp:[3,1], cuina:[9,2.6], barra:[4,1.2], barrafardos:[4,1.2], living:[3.5,3.5],
     livingf:[3.5,3.5], vela:[0.3,0.3], sanitario:[4.5,2.5], tractor:[3.5,2],
     dj:[2.5,1.2], trussdj:[4,0.5], fardo:[1.2,0.8], fogonero:[1.2,1.2], tronco:[5,0.8],
     rondafardos:[10,10], kermess:[10,10], texto:[3,0.5],
