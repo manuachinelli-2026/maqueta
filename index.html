@@ -989,8 +989,10 @@ label3D('GINGO', toWX(47.5), 3.6, toWZ(2.2));
 staticGroup.add((() => { const t = makeTree(1.2,0.7,'#356012'); t.position.set(toWX(42.5),0,toWZ(2.3)); return t; })());
 label3D('OMBÚ', toWX(42.5), 3.0, toWZ(2.3));
 
-// ── ÁLAMOS este (fila) · columnas angostas y altas, como en la foto real ──
+// ── ÁLAMOS este (fila) · columnas angostas y altas, como en la foto real.
+//    Se sacan los primeros 3 (contando desde la tranquera de entrada) ──
 for (let y = 3; y <= 43; y += 4) {
+  if (y < 15) continue;
   const t = makePoplar(5.2, 0.5, '#4d7a2a');
   t.position.set(toWX(53), 0, toWZ(y));
   staticGroup.add(t);
@@ -1012,7 +1014,7 @@ label3D('ÁLAMOS · E', toWX(55), 6.3, toWZ(22));
   const diag = mesh(new THREE.BoxGeometry(Math.hypot(halfW*2-0.2,1.0), 0.08, 0.06), woodMat, 0, 0.75, 0);
   diag.rotation.z = Math.atan2(1.0, halfW*2-0.2);
   g.add(diag);
-  g.rotation.y = Math.PI/2; // portón perpendicular al camino, en la línea del cerco
+  // sin rotación: en línea con el alambrado (antes quedaba perpendicular)
   g.position.set(toWX(52.75), 0, toWZ(0));
   staticGroup.add(g);
   label3D('TRANQUERA', toWX(52.75), 2.1, toWZ(1.6));
@@ -1071,7 +1073,7 @@ for (let x = 0; x <= 27; x += 2.5) {
 })();
 
 // ── cerco exterior ──
-staticGroup.add(fenceRun(toWX(0),toWZ(0), toWX(51.5),toWZ(0), 4, [[29.85,33.45]]));
+staticGroup.add(fenceRun(toWX(0),toWZ(0), toWX(54),toWZ(0), 4, [[29.85,33.45],[49,54.5]]));
 staticGroup.add(fenceRun(toWX(0),toWZ(44), toWX(54),toWZ(44), 4, [[30.7,34.9]]));
 staticGroup.add(fenceRun(toWX(0),toWZ(0), toWX(0),toWZ(44), 4, [[8.8,11.2]]));
 staticGroup.add(fenceRun(toWX(54),toWZ(0), toWX(54),toWZ(44), 4));
