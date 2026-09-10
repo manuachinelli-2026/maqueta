@@ -503,6 +503,10 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// la escena (casco + ítems) es estática entre cambios: recalcular el mapa de
+// sombras en cada uno de los 60 cuadros por segundo era el costo más alto de
+// la maqueta. Se recalcula solo cuando algo realmente cambió (ver render()).
+renderer.shadowMap.autoUpdate = false;
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
@@ -544,7 +548,7 @@ scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2d8, 1.15);
 sun.position.set(26, 38, 18);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(1024, 1024);
 sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
 sun.shadow.camera.top = 34;   sun.shadow.camera.bottom = -34;
 sun.shadow.camera.near = 1;   sun.shadow.camera.far = 120;
@@ -670,6 +674,16 @@ function mesh(geo, m, x, y, z) {
   if (x !== undefined) o.position.set(x, y, z);
   return o;
 }
+// versión sin sombra propia, para follaje/enredaderas/flores repetidas
+// (muchísimas piezas chicas — proyectar sombra de cada una es el costo más
+// alto de rendimiento y casi no se nota visualmente)
+function meshLite(geo, m, x, y, z) {
+  const o = new THREE.Mesh(geo, m);
+  o.castShadow = false;
+  o.receiveShadow = false;
+  if (x !== undefined) o.position.set(x, y, z);
+  return o;
+}
 function group(...children) {
   const g = new THREE.Group();
   children.forEach(c => c && g.add(c));
@@ -684,7 +698,7 @@ function makeTree(canopyR, trunkH, canopyColor, style) {
     0, trunkH/2, 0
   );
   g.add(trunk);
-  const blobs = style === 'tall' ? 3 : style === 'lush' ? 7 : 4;
+  const blobs = style === 'tall' ? 3 : style === 'lush' ? 6 : 4;
   for (let i = 0; i < blobs; i++) {
     const a = (i / blobs) * Math.PI * 2;
     const r = canopyR * (0.62 + Math.random()*0.3);
@@ -693,7 +707,7 @@ function makeTree(canopyR, trunkH, canopyColor, style) {
     const by = trunkH + r * (style === 'tall' ? 0.9 : 0.55) + i*0.05;
     const geo = new THREE.IcosahedronGeometry(r, 0);
     const c = new THREE.Color(canopyColor).offsetHSL(0, 0, (Math.random()-0.5)*0.06);
-    g.add(mesh(geo, mat(c, { roughness: 0.9 }), bx, by, bz));
+    g.add(meshLite(geo, mat(c, { roughness: 0.9 }), bx, by, bz));
   }
   const topGeo = new THREE.IcosahedronGeometry(canopyR*0.7, 0);
   g.add(mesh(topGeo, mat(canopyColor, { roughness: 0.9 }), 0, trunkH + canopyR*(style==='tall'?1.3:0.85), 0));
@@ -714,14 +728,14 @@ function makeFig(canopyR, trunkH, canopyColor) {
     branch.rotation.x = Math.sin(a)*0.55;
     g.add(branch);
   }
-  const blobs = 9;
+  const blobs = 7;
   for (let i = 0; i < blobs; i++) {
     const a = (i/blobs)*Math.PI*2;
     const r = canopyR * (0.5 + Math.random()*0.28);
     const bx = Math.cos(a)*canopyR*0.44, bz = Math.sin(a)*canopyR*0.44;
     const by = trunkH*0.62 + r*0.5;
     const c = new THREE.Color(canopyColor).offsetHSL(0, 0, (Math.random()-0.5)*0.06);
-    g.add(mesh(new THREE.IcosahedronGeometry(r, 0), mat(c, { roughness: 0.9 }), bx, by, bz));
+    g.add(meshLite(new THREE.IcosahedronGeometry(r, 0), mat(c, { roughness: 0.9 }), bx, by, bz));
   }
   g.add(mesh(new THREE.IcosahedronGeometry(canopyR*0.72, 0), mat(canopyColor, { roughness: 0.9 }), 0, trunkH*0.62+canopyR*0.5, 0));
   return g;
@@ -732,14 +746,14 @@ function makePoplar(height, canopyR, canopyColor) {
   const g = new THREE.Group();
   const trunkH = height * 0.16;
   g.add(mesh(new THREE.CylinderGeometry(canopyR*0.16, canopyR*0.22, trunkH, 6), mat('#4a3a26',{roughness:0.95}), 0, trunkH/2, 0));
-  const blobs = 9;
+  const blobs = 6;
   for (let i = 0; i < blobs; i++) {
     const t = i/(blobs-1);
     const by = trunkH + t*(height-trunkH*1.1);
     const r = canopyR * (0.5 + 0.5*Math.sin(t*Math.PI));
     const bx = (Math.random()-0.5)*canopyR*0.22, bz = (Math.random()-0.5)*canopyR*0.22;
     const c = new THREE.Color(canopyColor || '#4d7a2a').offsetHSL(0, 0, (Math.random()-0.5)*0.05);
-    g.add(mesh(new THREE.IcosahedronGeometry(r, 0), mat(c, { roughness: 0.9 }), bx, by, bz));
+    g.add(meshLite(new THREE.IcosahedronGeometry(r, 0), mat(c, { roughness: 0.9 }), bx, by, bz));
   }
   return g;
 }
@@ -748,20 +762,18 @@ function makePoplar(height, canopyR, canopyColor) {
 function vineOnPost(radius, height, color) {
   const g = new THREE.Group();
   const leafMat = mat(color, { roughness: 0.9 });
-  const n = 16;
+  const n = 8;
   for (let i = 0; i < n; i++) {
     const t = i/n;
     const a = t*Math.PI*5;
     const y = 0.15 + t*height*0.85;
     const r = radius + 0.05;
-    g.add(mesh(new THREE.IcosahedronGeometry(0.045+Math.random()*0.04,0), leafMat, Math.cos(a)*r, y, Math.sin(a)*r));
+    g.add(meshLite(new THREE.IcosahedronGeometry(0.045+Math.random()*0.04,0), leafMat, Math.cos(a)*r, y, Math.sin(a)*r));
   }
   // un par de brotes sueltos colgando, para que no quede prolijo
-  for (let k = 0; k < 2; k++) {
-    const by = height*(0.45+Math.random()*0.3);
-    for (let j = 0; j < 4; j++) {
-      g.add(mesh(new THREE.IcosahedronGeometry(0.038,0), leafMat, radius+0.1+Math.random()*0.06, by-j*0.11, (Math.random()-0.5)*0.15));
-    }
+  const by = height*(0.45+Math.random()*0.3);
+  for (let j = 0; j < 3; j++) {
+    g.add(meshLite(new THREE.IcosahedronGeometry(0.038,0), leafMat, radius+0.1+Math.random()*0.06, by-j*0.11, (Math.random()-0.5)*0.15));
   }
   return g;
 }
@@ -771,18 +783,18 @@ function flowerBed(length) {
   const g = new THREE.Group();
   g.add(mesh(new THREE.BoxGeometry(length, 0.22, 0.5), mat('#4a3a28',{roughness:1}), 0, 0.11, 0));
   const flowerColors = ['#e8a0c0','#f0d060','#eeeee2','#c86048'];
-  const n = Math.round(length*3.2);
+  const n = Math.round(length*2);
   for (let i = 0; i < n; i++) {
     const fx = -length/2 + Math.random()*length, fz = (Math.random()-0.5)*0.4;
     const isLeaf = Math.random() > 0.45;
     const col = isLeaf ? '#4a6a2a' : flowerColors[Math.floor(Math.random()*flowerColors.length)];
-    g.add(mesh(new THREE.IcosahedronGeometry(0.06+Math.random()*0.08,0), mat(col,{roughness:0.85}), fx, 0.22+Math.random()*0.22, fz));
+    g.add(meshLite(new THREE.IcosahedronGeometry(0.06+Math.random()*0.08,0), mat(col,{roughness:0.85}), fx, 0.22+Math.random()*0.22, fz));
   }
   const vineMat = mat('#3f6a1e', { roughness: 0.9 });
-  for (let k = 0; k < 3; k++) {
+  for (let k = 0; k < 2; k++) {
     const vx = -length/2 + Math.random()*length;
-    for (let j = 0; j < 5; j++) {
-      g.add(mesh(new THREE.IcosahedronGeometry(0.035,0), vineMat, vx+(Math.random()-0.5)*0.5, 0.05, 0.3+j*0.18+Math.random()*0.1));
+    for (let j = 0; j < 4; j++) {
+      g.add(meshLite(new THREE.IcosahedronGeometry(0.035,0), vineMat, vx+(Math.random()-0.5)*0.5, 0.05, 0.3+j*0.18+Math.random()*0.1));
     }
   }
   return g;
@@ -791,12 +803,12 @@ function flowerBed(length) {
 // arbusto bajo, más ancho que alto, denso — para el jardín cerca de la casa
 function makeShrub(canopyR, color) {
   const g = new THREE.Group();
-  const blobs = 6;
+  const blobs = 5;
   for (let i = 0; i < blobs; i++) {
     const a = (i/blobs)*Math.PI*2;
     const r = canopyR * (0.55 + Math.random()*0.3);
     const c = new THREE.Color(color).offsetHSL(0, 0, (Math.random()-0.5)*0.06);
-    g.add(mesh(new THREE.IcosahedronGeometry(r,0), mat(c,{roughness:0.92}), Math.cos(a)*canopyR*0.42, r*0.6, Math.sin(a)*canopyR*0.42));
+    g.add(meshLite(new THREE.IcosahedronGeometry(r,0), mat(c,{roughness:0.92}), Math.cos(a)*canopyR*0.42, r*0.6, Math.sin(a)*canopyR*0.42));
   }
   g.add(mesh(new THREE.IcosahedronGeometry(canopyR*0.62,0), mat(color,{roughness:0.92}), 0, canopyR*0.55, 0));
   return g;
@@ -1120,10 +1132,10 @@ function buildWaterTower(height, tankR) {
 }
 staticGroup.add((() => {
   const t = buildWaterTower(4.2, 1.05);
-  t.position.set(toWX(4.5), 0, toWZ(18));
+  t.position.set(toWX(3), 0, toWZ(17));
   return t;
 })());
-label3D('TANQUE', toWX(4.5), 6.2, toWZ(18));
+label3D('TANQUE', toWX(3), 6.2, toWZ(17));
 
 // ── parrilla + horno de barro, color casa, a la altura del 5to poste del
 //    cerco oeste ──
@@ -1148,9 +1160,9 @@ label3D('TANQUE', toWX(4.5), 6.2, toWZ(18));
   const pl = addNightLight(new THREE.PointLight(0xff7020,0,3,2), 1.0);
   pl.position.set(1.15,0.8,0);
   pl.userData.alwaysOn = true;
-  g.position.set(toWX(5), 0, toWZ(20));
+  g.position.set(toWX(2.8), 0, toWZ(20));
   staticGroup.add(g);
-  label3D('PARRILLA', toWX(5.8), 1.6, toWZ(20));
+  label3D('PARRILLA', toWX(3.6), 1.6, toWZ(20));
 })();
 
 // ── arbusto bajo en el jardín cerca de la casa (donde antes había una
@@ -1373,7 +1385,7 @@ function buildItemMesh(item) {
         bush.position.set(sx, 0, h/2-0.1);
         g.add(bush);
         for (let k=0;k<4;k++) {
-          g.add(mesh(new THREE.SphereGeometry(0.03,5,5), mat('#b02818',{roughness:0.5}), sx+(Math.random()-0.5)*0.4, 0.35+Math.random()*0.3, h/2-0.1+(Math.random()-0.5)*0.3));
+          g.add(meshLite(new THREE.SphereGeometry(0.03,5,5), mat('#b02818',{roughness:0.5}), sx+(Math.random()-0.5)*0.4, 0.35+Math.random()*0.3, h/2-0.1+(Math.random()-0.5)*0.3));
         }
       }
 
@@ -1678,6 +1690,7 @@ function render() {
   }
 
   renderSidebar();
+  renderer.shadowMap.needsUpdate = true;
 }
 
 function disposeGroup(g) {
