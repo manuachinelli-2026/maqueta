@@ -1110,6 +1110,27 @@ for (let x = 2; x <= 49; x += 4.3) {
   staticGroup.add(b);
 }
 
+// ── tranquera para autos, sobre el cerco sur (el que va de los álamos al
+//    tanque de agua): contando desde el álamo, entre el poste 5 y 6 ──
+(function () {
+  const g = buildTranquera(1.5, 1.4);
+  g.rotation.y = Math.PI/2;
+  g.position.set(toWX(32.8), 0, toWZ(44));
+  staticGroup.add(g);
+  label3D('TRANQUERA', toWX(32.8), 2.2, toWZ(42.4));
+})();
+
+// ── arbustos desprolijos a lo largo de todo el cerco sur (de los álamos al
+//    tanque), con hueco en la tranquera de autos ──
+for (let x = 2; x <= 52; x += 4.3) {
+  if (Math.abs(x-32.8) < 3) continue;
+  if (Math.abs(x-2.4) < 2.5) continue; // ahí está el tanque
+  if (x > 4.5 && x < 19) continue; // ahí está la casa
+  const b = makeShrub(1.7 + Math.random()*0.3, '#3f6a20');
+  b.position.set(toWX(x), 0, toWZ(41.9));
+  staticGroup.add(b);
+}
+
 // ── torre de agua con enredaderas, entre la tranquerita y la casa ──
 function buildWaterTower(height, tankR) {
   const g = new THREE.Group();
