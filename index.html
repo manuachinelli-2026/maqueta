@@ -431,6 +431,7 @@ input:disabled { opacity: .38; cursor: not-allowed; }
 
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
 <script>
 'use strict';
 
@@ -687,6 +688,25 @@ function meshLite(geo, m, x, y, z) {
   if (x !== undefined) o.position.set(x, y, z);
   return o;
 }
+
+// junta muchos meshes chiquitos (copas de árbol, sillas, fardos...) en UNO
+// solo: mismo resultado visual pero un solo draw call en vez de decenas.
+// Usar solo con meshes que van a quedar quietos entre sí (no widgets con
+// movimiento propio) y que comparten un único material "representativo".
+function mergeMeshes(meshes, material, opts) {
+  if (!meshes.length) return null;
+  const geoms = meshes.map(o => {
+    o.updateMatrix();
+    const g = o.geometry.clone();
+    g.applyMatrix4(o.matrix);
+    return g;
+  });
+  const merged = THREE.BufferGeometryUtils.mergeBufferGeometries(geoms, false);
+  const out = new THREE.Mesh(merged, material);
+  const lite = opts && opts.lite;
+  out.castShadow = out.receiveShadow = !lite;
+  return out;
+}
 function group(...children) {
   const g = new THREE.Group();
   children.forEach(c => c && g.add(c));
@@ -701,6 +721,8 @@ function makeTree(canopyR, trunkH, canopyColor, style) {
     0, trunkH/2, 0
   );
   g.add(trunk);
+  const canopyMat = mat(canopyColor, { roughness: 0.9 });
+  const blobPieces = [];
   const blobs = style === 'tall' ? 3 : style === 'lush' ? 6 : 4;
   for (let i = 0; i < blobs; i++) {
     const a = (i / blobs) * Math.PI * 2;
@@ -708,12 +730,10 @@ function makeTree(canopyR, trunkH, canopyColor, style) {
     const bx = Math.cos(a) * canopyR * (style === 'lush' ? 0.4 : 0.32);
     const bz = Math.sin(a) * canopyR * (style === 'lush' ? 0.4 : 0.32);
     const by = trunkH + r * (style === 'tall' ? 0.9 : 0.55) + i*0.05;
-    const geo = new THREE.IcosahedronGeometry(r, 0);
-    const c = new THREE.Color(canopyColor).offsetHSL(0, 0, (Math.random()-0.5)*0.06);
-    g.add(meshLite(geo, mat(c, { roughness: 0.9 }), bx, by, bz));
+    blobPieces.push(mesh(new THREE.IcosahedronGeometry(r, 0), canopyMat, bx, by, bz));
   }
-  const topGeo = new THREE.IcosahedronGeometry(canopyR*0.7, 0);
-  g.add(meshLite(topGeo, mat(canopyColor, { roughness: 0.9 }), 0, trunkH + canopyR*(style==='tall'?1.3:0.85), 0));
+  blobPieces.push(mesh(new THREE.IcosahedronGeometry(canopyR*0.7, 0), canopyMat, 0, trunkH + canopyR*(style==='tall'?1.3:0.85), 0));
+  g.add(mergeMeshes(blobPieces, canopyMat, { lite: true }));
   return g;
 }
 
@@ -731,16 +751,18 @@ function makeFig(canopyR, trunkH, canopyColor) {
     branch.rotation.x = Math.sin(a)*0.55;
     g.add(branch);
   }
+  const canopyMat = mat(canopyColor, { roughness: 0.9 });
+  const blobPieces = [];
   const blobs = 7;
   for (let i = 0; i < blobs; i++) {
     const a = (i/blobs)*Math.PI*2;
     const r = canopyR * (0.5 + Math.random()*0.28);
     const bx = Math.cos(a)*canopyR*0.44, bz = Math.sin(a)*canopyR*0.44;
     const by = trunkH*0.62 + r*0.5;
-    const c = new THREE.Color(canopyColor).offsetHSL(0, 0, (Math.random()-0.5)*0.06);
-    g.add(meshLite(new THREE.IcosahedronGeometry(r, 0), mat(c, { roughness: 0.9 }), bx, by, bz));
+    blobPieces.push(mesh(new THREE.IcosahedronGeometry(r, 0), canopyMat, bx, by, bz));
   }
-  g.add(meshLite(new THREE.IcosahedronGeometry(canopyR*0.72, 0), mat(canopyColor, { roughness: 0.9 }), 0, trunkH*0.62+canopyR*0.5, 0));
+  blobPieces.push(mesh(new THREE.IcosahedronGeometry(canopyR*0.72, 0), canopyMat, 0, trunkH*0.62+canopyR*0.5, 0));
+  g.add(mergeMeshes(blobPieces, canopyMat, { lite: true }));
   return g;
 }
 
@@ -749,36 +771,38 @@ function makePoplar(height, canopyR, canopyColor) {
   const g = new THREE.Group();
   const trunkH = height * 0.16;
   g.add(meshLite(new THREE.CylinderGeometry(canopyR*0.16, canopyR*0.22, trunkH, 6), mat('#4a3a26',{roughness:0.95}), 0, trunkH/2, 0));
+  const canopyMat = mat(canopyColor || '#4d7a2a', { roughness: 0.9 });
+  const blobPieces = [];
   const blobs = 6;
   for (let i = 0; i < blobs; i++) {
     const t = i/(blobs-1);
     const by = trunkH + t*(height-trunkH*1.1);
     const r = canopyR * (0.5 + 0.5*Math.sin(t*Math.PI));
     const bx = (Math.random()-0.5)*canopyR*0.22, bz = (Math.random()-0.5)*canopyR*0.22;
-    const c = new THREE.Color(canopyColor || '#4d7a2a').offsetHSL(0, 0, (Math.random()-0.5)*0.05);
-    g.add(meshLite(new THREE.IcosahedronGeometry(r, 0), mat(c, { roughness: 0.9 }), bx, by, bz));
+    blobPieces.push(mesh(new THREE.IcosahedronGeometry(r, 0), canopyMat, bx, by, bz));
   }
+  g.add(mergeMeshes(blobPieces, canopyMat, { lite: true }));
   return g;
 }
 
 // enredadera desprolija trepando un palo (columna de la galería)
 function vineOnPost(radius, height, color) {
-  const g = new THREE.Group();
   const leafMat = mat(color, { roughness: 0.9 });
+  const pieces = [];
   const n = 8;
   for (let i = 0; i < n; i++) {
     const t = i/n;
     const a = t*Math.PI*5;
     const y = 0.15 + t*height*0.85;
     const r = radius + 0.05;
-    g.add(meshLite(new THREE.IcosahedronGeometry(0.045+Math.random()*0.04,0), leafMat, Math.cos(a)*r, y, Math.sin(a)*r));
+    pieces.push(mesh(new THREE.IcosahedronGeometry(0.045+Math.random()*0.04,0), leafMat, Math.cos(a)*r, y, Math.sin(a)*r));
   }
   // un par de brotes sueltos colgando, para que no quede prolijo
   const by = height*(0.45+Math.random()*0.3);
   for (let j = 0; j < 3; j++) {
-    g.add(meshLite(new THREE.IcosahedronGeometry(0.038,0), leafMat, radius+0.1+Math.random()*0.06, by-j*0.11, (Math.random()-0.5)*0.15));
+    pieces.push(mesh(new THREE.IcosahedronGeometry(0.038,0), leafMat, radius+0.1+Math.random()*0.06, by-j*0.11, (Math.random()-0.5)*0.15));
   }
-  return g;
+  return mergeMeshes(pieces, leafMat, { lite: true });
 }
 
 // cantero desprolijo con flores mixtas y alguna enredadera escapándose por el piso
@@ -805,16 +829,16 @@ function flowerBed(length) {
 
 // arbusto bajo, más ancho que alto, denso — para el jardín cerca de la casa
 function makeShrub(canopyR, color) {
-  const g = new THREE.Group();
+  const bushMat = mat(color, { roughness: 0.92 });
+  const pieces = [];
   const blobs = 5;
   for (let i = 0; i < blobs; i++) {
     const a = (i/blobs)*Math.PI*2;
     const r = canopyR * (0.55 + Math.random()*0.3);
-    const c = new THREE.Color(color).offsetHSL(0, 0, (Math.random()-0.5)*0.06);
-    g.add(meshLite(new THREE.IcosahedronGeometry(r,0), mat(c,{roughness:0.92}), Math.cos(a)*canopyR*0.42, r*0.6, Math.sin(a)*canopyR*0.42));
+    pieces.push(mesh(new THREE.IcosahedronGeometry(r,0), bushMat, Math.cos(a)*canopyR*0.42, r*0.6, Math.sin(a)*canopyR*0.42));
   }
-  g.add(meshLite(new THREE.IcosahedronGeometry(canopyR*0.62,0), mat(color,{roughness:0.92}), 0, canopyR*0.55, 0));
-  return g;
+  pieces.push(mesh(new THREE.IcosahedronGeometry(canopyR*0.62,0), bushMat, 0, canopyR*0.55, 0));
+  return mergeMeshes(pieces, bushMat, { lite: true });
 }
 
 function makePerson() {
@@ -1225,8 +1249,10 @@ for (const [x,y] of peoplePositions) {
    ITEM BUILDERS
    ════════════════════════════════════════════════════════════ */
 function chairsAround(w, h, count, seatMat) {
-  const g = new THREE.Group();
+  // todas las sillas de una mesa comparten material: se funden en un solo
+  // mesh (si no, una mesa con 8 sillas son 24 draw calls solita)
   const rx = w/2 + 0.28, rz = h/2 + 0.28;
+  const pieces = [];
   for (let i = 0; i < count; i++) {
     const a = (i/count) * Math.PI*2;
     const cx = Math.cos(a) * rx, cz = Math.sin(a) * rz;
@@ -1234,9 +1260,9 @@ function chairsAround(w, h, count, seatMat) {
     const back = mesh(new THREE.BoxGeometry(0.34,0.34,0.04), seatMat, cx*1.02, 0.6, cz*1.02);
     back.lookAt(0, 0.6, 0);
     const leg = mesh(new THREE.CylinderGeometry(0.02,0.02,0.42,5), seatMat, cx, 0.21, cz);
-    g.add(seat, back, leg);
+    pieces.push(seat, back, leg);
   }
-  return g;
+  return mergeMeshes(pieces, seatMat);
 }
 
 function pampasGrass(scale) {
@@ -1263,6 +1289,45 @@ function pampasGrass(scale) {
 // fardo rectangular (paja) vestido con tela clara cruzada y atada con cuerda,
 // como en el moodboard: no es el rollo redondo, es el bloque cuadrado/rectangular
 // con una telita encima para sentarse.
+// ronda de fardos: arma los N fardos ya fundidos en 3 meshes (paja / hilo /
+// tela) en vez de N×4 — la ronda de 20 pasaba de 80 draw calls a 3.
+function hayBaleRing(r, n, halfSize, length, color) {
+  const g = new THREE.Group();
+  const width = halfSize * 1.7, height = halfSize * 1.35;
+  const strawMat = mat(color, { roughness: 1 });
+  const twineMat = mat('#4a3f2e', { roughness: 0.9 });
+  const clothMat = mat('#ddcea0', { roughness: 0.88 });
+  const strawGeos = [], twineGeos = [], clothGeos = [];
+  const dummy = new THREE.Object3D();
+  for (let i = 0; i < n; i++) {
+    const a = (i/n)*Math.PI*2;
+    dummy.position.set(Math.cos(a)*r, 0, Math.sin(a)*r);
+    dummy.rotation.set(0, a + Math.PI/2, 0);
+    dummy.updateMatrix();
+    const m = dummy.matrix;
+
+    const straw = new THREE.BoxGeometry(length, height, width).translate(0, height/2, 0);
+    straw.applyMatrix4(m);
+    strawGeos.push(straw);
+
+    for (const off of [-length*0.3, length*0.3]) {
+      const t = new THREE.BoxGeometry(0.025, height+0.015, width+0.015).translate(off, height/2, 0);
+      t.applyMatrix4(m);
+      twineGeos.push(t);
+    }
+
+    const cloth = new THREE.BoxGeometry(length*0.78, 0.03, width+0.16).translate(0, height+0.015, 0);
+    cloth.applyMatrix4(m);
+    clothGeos.push(cloth);
+  }
+  const strawMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(strawGeos, false), strawMat);
+  strawMesh.castShadow = strawMesh.receiveShadow = true;
+  const twineMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(twineGeos, false), twineMat);
+  const clothMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(clothGeos, false), clothMat);
+  g.add(strawMesh, twineMesh, clothMesh);
+  return g;
+}
+
 function hayBale(halfSize, length, color) {
   const g = new THREE.Group();
   const width = halfSize * 1.7, height = halfSize * 1.35;
@@ -1282,18 +1347,19 @@ function hayBale(halfSize, length, color) {
 // living Gervasoni: sillón blanco/perla bajo, con almohadón grueso y respaldo
 // bajo curvo, sobre marco de aluminio claro (línea InOut) — de "ancho"
 // variable para armar sillones simples (~0.75m) o dobles (~1.3m).
-function gervasoniSeat(width) {
-  const g = new THREE.Group();
+// geometrías locales (sin fundir) de un sillón, para juntar los 6 sillones
+// de un living en un solo mesh de marco + uno de almohadón
+function gervasoniSeatGeoms(width) {
   const depth = 0.82, seatH = 0.36;
-  const frameMat = mat('#cdc8b6', { roughness: 0.45, metalness: 0.2 });
-  const cushionMat = mat('#ece8dd', { roughness: 0.6 });
-  g.add(mesh(new THREE.BoxGeometry(width, 0.06, depth), frameMat, 0, 0.3, 0));
-  g.add(mesh(new THREE.BoxGeometry(width-0.05, 0.2, depth-0.06), cushionMat, 0, seatH, 0.01));
-  g.add(mesh(new THREE.BoxGeometry(width-0.05, 0.3, 0.14), cushionMat, 0, seatH+0.16, -depth/2+0.08));
+  const frameGeos = [new THREE.BoxGeometry(width, 0.06, depth).translate(0, 0.3, 0)];
   for (const lx of [-width/2+0.07, width/2-0.07]) for (const lz of [-depth/2+0.07, depth/2-0.07]) {
-    g.add(mesh(new THREE.CylinderGeometry(0.018,0.018,0.3,6), frameMat, lx, 0.15, lz));
+    frameGeos.push(new THREE.CylinderGeometry(0.018,0.018,0.3,6).translate(lx, 0.15, lz));
   }
-  return g;
+  const cushionGeos = [
+    new THREE.BoxGeometry(width-0.05, 0.2, depth-0.06).translate(0, seatH, 0.01),
+    new THREE.BoxGeometry(width-0.05, 0.3, 0.14).translate(0, seatH+0.16, -depth/2+0.08),
+  ];
+  return { frameGeos, cushionGeos };
 }
 
 function gervasoniTable(size) {
@@ -1308,18 +1374,31 @@ function gervasoniTable(size) {
 // de una mesa baja, todo blanco/perla — mismo mueble real para 'living' y
 // 'livingf' (las dos entradas de "living" del panel).
 function gervasoniLiving(w, h) {
+  // los 6 sillones comparten marco/almohadón: se arman como 2 draw calls
+  // en vez de ~40 (7 piezas x 6 sillones)
   const g = new THREE.Group();
+  const frameMat = mat('#cdc8b6', { roughness: 0.45, metalness: 0.2 });
+  const cushionMat = mat('#ece8dd', { roughness: 0.6 });
   const seq = [1.3, 0.75, 0.75, 1.3, 0.75, 0.75];
   const rx = Math.max(w/2*0.7, 1.3), rz = Math.max(h/2*0.7, 1.3);
+  const allFrame = [], allCushion = [];
+  const dummy = new THREE.Object3D();
   for (let i = 0; i < seq.length; i++) {
     const a = (i/seq.length) * Math.PI*2;
-    const seat = gervasoniSeat(seq[i]);
-    const px = Math.cos(a)*rx, pz = Math.sin(a)*rz;
-    seat.position.set(px, 0, pz);
-    seat.lookAt(0, 0, 0);
-    seat.rotation.y += Math.PI;
-    g.add(seat);
+    dummy.position.set(Math.cos(a)*rx, 0, Math.sin(a)*rz);
+    dummy.rotation.set(0, 0, 0);
+    dummy.lookAt(0, 0, 0);
+    dummy.rotateY(Math.PI);
+    dummy.updateMatrix();
+    const { frameGeos, cushionGeos } = gervasoniSeatGeoms(seq[i]);
+    for (const gm of frameGeos) { gm.applyMatrix4(dummy.matrix); allFrame.push(gm); }
+    for (const gm of cushionGeos) { gm.applyMatrix4(dummy.matrix); allCushion.push(gm); }
   }
+  const frameMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(allFrame, false), frameMat);
+  frameMesh.castShadow = frameMesh.receiveShadow = true;
+  const cushionMesh = new THREE.Mesh(THREE.BufferGeometryUtils.mergeBufferGeometries(allCushion, false), cushionMat);
+  cushionMesh.castShadow = cushionMesh.receiveShadow = true;
+  g.add(frameMesh, cushionMesh);
   g.add(gervasoniTable(Math.min(w,h)*0.34));
   return g;
 }
@@ -1642,14 +1721,7 @@ function buildItemMesh(item) {
       break;
     }
     case 'rondafardos': {
-      const r = w/2, n = 20;
-      for (let i=0;i<n;i++) {
-        const a = (i/n)*Math.PI*2;
-        const b = hayBale(0.4, 0.85, TYPES.fardo.color);
-        b.position.set(Math.cos(a)*r, 0, Math.sin(a)*r);
-        b.rotation.y = a + Math.PI/2;
-        g.add(b);
-      }
+      g.add(hayBaleRing(w/2, 20, 0.4, 0.85, TYPES.fardo.color));
       break;
     }
     case 'kermess': {
