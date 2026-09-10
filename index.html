@@ -354,6 +354,7 @@ input:disabled { opacity: .38; cursor: not-allowed; }
           <option value="sanitario">Baño VIP (6.5×4 m · 5 compartimentos)</option>
           <option value="tractor">Tractor</option>
           <option value="dj">Cabina DJ</option>
+          <option value="trussdj">Andamio de luces (arco)</option>
           <option value="fardo">Fardo (1.20 × 0.80 m)</option>
           <option value="fogonero">Fogonero (1.20 × 1.20 m · fuego)</option>
           <option value="tronco">Árbol caído / Tronco (≈5 m)</option>
@@ -454,6 +455,7 @@ const TYPES = {
   sanitario:   { label: 'Baño VIP',          color: '#d4a870', fg: '#1a0e00' },
   tractor:     { label: 'Tractor',           color: '#c0392b', fg: '#fff0ee' },
   dj:          { label: 'Cabina DJ',         color: '#7040c0', fg: '#f0e8ff' },
+  trussdj:     { label: 'Andamio de luces',   color: '#1c1c1c', fg: '#f0e8ff' },
   fardo:       { label: 'Fardo',             color: '#c7a13e', fg: '#1a1400' },
   fogonero:    { label: 'Fogonero',          color: '#d2691e', fg: '#fff0e0' },
   tronco:      { label: 'Árbol caído',       color: '#7a5230', fg: '#f0e2d0' },
@@ -1229,6 +1231,44 @@ function buildItemMesh(item) {
       dj.position.set(0,1.5,0); g.userData.lights=[dj];
       break;
     }
+    case 'trussdj': {
+      // andamio/truss tipo arco de arco de fútbol, con cabezas móviles y pares de luz
+      const poleH = 3.0;
+      const trussMat = mat('#181818', { roughness: 0.55, metalness: 0.5 });
+      for (const px of [-w/2, w/2]) {
+        g.add(mesh(new THREE.BoxGeometry(0.12, poleH, 0.12), trussMat, px, poleH/2, 0));
+        const brace = mesh(new THREE.BoxGeometry(0.03, poleH*1.05, 0.18), trussMat, px, poleH/2, 0);
+        brace.rotation.y = Math.PI/4;
+        g.add(brace);
+      }
+      g.add(mesh(new THREE.BoxGeometry(w+0.14, 0.16, 0.16), trussMat, 0, poleH, 0));
+      const topBrace = mesh(new THREE.BoxGeometry(w, 0.03, 0.22), trussMat, 0, poleH-0.09, 0);
+      topBrace.rotation.y = Math.PI/4;
+      g.add(topBrace);
+
+      const lightColors = ['#ff3050','#30a0ff','#ffe030','#30ff70'];
+      const nHeads = Math.max(3, Math.round(w/0.9));
+      const lights = [];
+      for (let i = 0; i <= nHeads; i++) {
+        const lx = -w/2 + (w*i/nHeads);
+        const col = lightColors[i % lightColors.length];
+        const headMat = new THREE.MeshStandardMaterial({ color:'#141414', emissive: col, emissiveIntensity: 0 });
+        registerFlicker(headMat, 1.1, 5 + (i%3));
+        const head = mesh(new THREE.CylinderGeometry(0.07,0.09,0.18,8), headMat, lx, poleH-0.2, 0);
+        head.rotation.x = Math.PI*0.32;
+        g.add(head);
+        const beamMat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0 });
+        registerFlicker(beamMat, 0.16, 5 + (i%3), 'opacity');
+        const beam = mesh(new THREE.ConeGeometry(0.4, 2.1, 10, 1, true), beamMat, lx, poleH-1.35, 0.45);
+        beam.rotation.x = Math.PI*0.12;
+        g.add(beam);
+        const pl = addNightLight(new THREE.PointLight(new THREE.Color(col), 0, 3.5, 2), 0.55);
+        pl.position.set(lx, poleH-0.3, 0.2);
+        lights.push(pl);
+      }
+      g.userData.lights = lights;
+      break;
+    }
     case 'fardo': {
       g.add(hayBale(Math.min(w,h)/2*0.85, Math.max(w,h), TYPES.fardo.color));
       break;
@@ -1652,7 +1692,7 @@ document.getElementById('i-type').addEventListener('change', e => {
     bebedero:[7,1.0], bombita:[10,0.25], reflector:[0.5,0.5], pista:[6,6],
     mesaimp:[3,1], cuina:[8,8], barra:[4,1.2], barrafardos:[4,1.2], living:[3.5,3.5],
     livingf:[3.5,3.5], vela:[0.3,0.3], sanitario:[4.5,2.5], tractor:[3.5,2],
-    dj:[2.5,1.2], fardo:[1.2,0.8], fogonero:[1.2,1.2], tronco:[5,0.8],
+    dj:[2.5,1.2], trussdj:[4,0.5], fardo:[1.2,0.8], fogonero:[1.2,1.2], tronco:[5,0.8],
     rondafardos:[10,10], kermess:[10,10], texto:[3,0.5],
   };
   if (dims[e.target.value]) {
@@ -1743,8 +1783,8 @@ function animate() {
     const flick = nl.light.userData.alwaysOn ? 1 : nightT;
     nl.light.intensity = nl.intensity * flick * (0.92 + Math.sin(t*6 + nl.light.id)*0.08);
   }
-  scene.__casaWinMat && (scene.__casaWinMat.emissiveIntensity = nightT * 1.4);
-  scene.__casaWinMat2 && (scene.__casaWinMat2.emissiveIntensity = nightT * 1.4);
+  scene.__casaWinMat && (scene.__casaWinMat.emissiveIntensity = 0.16 + nightT * 1.24);
+  scene.__casaWinMat2 && (scene.__casaWinMat2.emissiveIntensity = 0.16 + nightT * 1.24);
 
   for (const f of flickerMats) {
     const flick = 0.85 + Math.sin(t*f.speed + f.phase)*0.15;
