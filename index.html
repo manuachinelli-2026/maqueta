@@ -825,21 +825,31 @@ function makePerson() {
   return g;
 }
 
-function fenceRun(x1,z1,x2,z2,spacing) {
+// gaps: lista de tramos [distMin, distMax] (en metros desde x1,z1) donde el
+// alambre y los postes se cortan porque ahí va una tranquera
+function fenceRun(x1,z1,x2,z2,spacing,gaps) {
   const g = new THREE.Group();
   const dx = x2-x1, dz = z2-z1;
   const len = Math.hypot(dx,dz);
   const n = Math.max(1, Math.round(len/spacing));
   const postMat = mat('#4a3a24', { roughness: 0.95 });
   const wireMat = new THREE.LineBasicMaterial({ color: 0x555555, transparent:true, opacity:0.55 });
-  const pts = [];
+  gaps = gaps || [];
+  const inGap = (dist) => gaps.some(([a,b]) => dist >= a && dist <= b);
+  let pts = [];
+  const flush = () => {
+    if (pts.length > 1) g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), wireMat));
+    pts = [];
+  };
   for (let i=0;i<=n;i++) {
     const t = i/n;
+    const dist = len*t;
     const px = x1+dx*t, pz = z1+dz*t;
+    if (inGap(dist)) { flush(); continue; }
     g.add(meshLite(new THREE.CylinderGeometry(0.045,0.06,0.85,5), postMat, px,0.42,pz));
     pts.push(new THREE.Vector3(px,0.72,pz));
   }
-  g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), wireMat));
+  flush();
   return g;
 }
 
@@ -1061,9 +1071,9 @@ for (let x = 0; x <= 27; x += 2.5) {
 })();
 
 // ── cerco exterior ──
-staticGroup.add(fenceRun(toWX(0),toWZ(0), toWX(51.5),toWZ(0), 4));
-staticGroup.add(fenceRun(toWX(0),toWZ(44), toWX(54),toWZ(44), 4));
-staticGroup.add(fenceRun(toWX(0),toWZ(0), toWX(0),toWZ(44), 4));
+staticGroup.add(fenceRun(toWX(0),toWZ(0), toWX(51.5),toWZ(0), 4, [[29.85,33.45]]));
+staticGroup.add(fenceRun(toWX(0),toWZ(44), toWX(54),toWZ(44), 4, [[30.7,34.9]]));
+staticGroup.add(fenceRun(toWX(0),toWZ(0), toWX(0),toWZ(44), 4, [[8.8,11.2]]));
 staticGroup.add(fenceRun(toWX(54),toWZ(0), toWX(54),toWZ(44), 4));
 
 // tranquera genérica (portón de madera), reutilizable en cualquier punto del cerco
@@ -1086,7 +1096,9 @@ function buildTranquera(halfW, postH) {
 //    cruza la divisoria ──
 (function () {
   const g = buildTranquera(1.25, 1.35);
-  g.rotation.y = Math.PI/2;
+  // sin rotación: el cerco norte corre en X, igual que el ancho del portón,
+  // así queda en línea con el alambrado (antes quedaba perpendicular,
+  // como flotando al lado)
   g.position.set(toWX(31.65), 0, toWZ(0));
   staticGroup.add(g);
   label3D('TRANQUERA', toWX(31.65), 2.1, toWZ(1.6));
@@ -1095,6 +1107,7 @@ function buildTranquera(halfW, postH) {
 // ── tranquerita de personas, sobre el cerco oeste, entre el poste 2 y 3 ──
 (function () {
   const g = buildTranquera(0.55, 1.05);
+  g.rotation.y = Math.PI/2; // el cerco oeste corre en Z, hay que girar el portón para que quede en línea
   g.position.set(toWX(0), 0, toWZ(10));
   staticGroup.add(g);
   label3D('TRANQUERITA', toWX(1.6), 1.7, toWZ(10));
@@ -1114,7 +1127,7 @@ for (let x = 2; x <= 49; x += 4.3) {
 //    tanque de agua): contando desde el álamo, entre el poste 5 y 6 ──
 (function () {
   const g = buildTranquera(1.5, 1.4);
-  g.rotation.y = Math.PI/2;
+  // sin rotación: el cerco sur también corre en X, en línea con el alambrado
   g.position.set(toWX(32.8), 0, toWZ(44));
   staticGroup.add(g);
   label3D('TRANQUERA', toWX(32.8), 2.2, toWZ(42.4));
